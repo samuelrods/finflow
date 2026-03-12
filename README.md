@@ -57,3 +57,7 @@ docker compose down
 **Critical Warning:** Executing `docker compose down -v` is a nuclear option. The `-v` flag destroys all volumes declared in the Docker configuration, including the persistent `postgres_data` volume. Running this command will permanently wipe your local development database. 
 
 Always rely on the targeted `-V` rebuild method detailed above to manage stale dependency state, rather than destroying the entire environment infrastructure to fix a local package issue.
+
+## Architecture Decisions
+
+The API follows a modular layered architecture (Controller → Service → Repository), organized by feature slice rather than by layer. Domain-Driven Design was considered and deliberately set aside: DDD's full apparatus — aggregates, domain events, and bounded contexts — exists to manage domains where the business logic itself is the hard problem. A personal finance tracker doesn't have that problem. Its complexity lies in the plumbing, not the domain rules. Applying DDD here would have introduced significant ceremony with no corresponding reduction in complexity, a pattern sometimes called "architecture astronomy." The design borrows selectively from DDD's tactical patterns — the repository abstraction, strict DTO boundaries, and domain-aligned naming — while keeping the overall structure simple, readable, and proportionate to the problem. Each feature module is fully self-contained, making it easy to locate, modify, and test in isolation.
