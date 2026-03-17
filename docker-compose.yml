@@ -27,6 +27,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       NODE_ENV: development
       PORT: 3001
+      BCRYPT_ROUNDS: 12
     ports:
       - "3001:3001"
     volumes:
