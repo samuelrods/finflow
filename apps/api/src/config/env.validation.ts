@@ -38,6 +38,12 @@ export class EnvironmentVariables {
       'BCRYPT_ROUNDS cannot exceed 14 to prevent asymmetric DoS attacks.',
   })
   BCRYPT_ROUNDS: number;
+
+  @IsString()
+  JWT_SECRET: string;
+
+  @IsString()
+  JWT_REFRESH_SECRET: string;
 }
 
 export function validate(config: Record<string, unknown>) {

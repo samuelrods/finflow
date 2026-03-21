@@ -13,3 +13,12 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model User {
+  id           String  @id @default(uuid())
+  email        String  @unique
+  passwordHash String
+  refreshTokenHash String?
+
+  @@map("users")
+}
