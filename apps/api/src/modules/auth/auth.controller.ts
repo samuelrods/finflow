@@ -102,6 +102,6 @@ export class AuthController {
   }
 
   private clearRefreshTokenCookie(res: Response): void {
-    res.clearCookie('refresh_token', { path: '/auth' });
+    res.clearCookie('refresh_token', { path: `/${API_PREFIX}/auth` });
   }
 }
