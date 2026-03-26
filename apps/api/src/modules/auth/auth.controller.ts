@@ -18,6 +18,7 @@ import {
 } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
+import { API_PREFIX } from '../../common/constants';
 
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -96,7 +97,7 @@ export class AuthController {
       secure: true,
       sameSite: 'lax',
       maxAge: REFRESH_TOKEN_TTL_MS,
-      path: '/auth',
+      path: `/${API_PREFIX}/auth`,
     });
   }
 
