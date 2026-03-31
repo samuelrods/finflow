@@ -5,6 +5,9 @@ const config: Config = {
   rootDir: 'src',
   testRegex: '.*\\.spec\\.ts$',
   transform: { '^.+\\.(t|j)s$': 'ts-jest' },
+  moduleNameMapper: {
+    '^(\\.\\.?/.*)\\.js$': '$1',
+  },
   collectCoverageFrom: [
     'modules/**/*.{ts,js}',
     // Exclude files that have nothing to test independently
