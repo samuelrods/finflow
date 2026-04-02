@@ -11,6 +11,7 @@ import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
 import { EnvironmentVariables } from '../../config/env.validation';
 import { JwtPayload } from '../../common/decorators/current-user.decorator';
+import { CategoriesService } from '../categories/categories.service';
 
 interface TokenPair {
   accessToken: string;
@@ -23,6 +24,7 @@ export class AuthService {
     private readonly usersRepository: UsersRepository,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService<EnvironmentVariables, true>,
+    private readonly categoriesService: CategoriesService,
   ) {}
 
   async register(dto: RegisterDto): Promise<TokenPair> {
@@ -42,6 +44,10 @@ export class AuthService {
       email: dto.email,
       passwordHash,
     });
+
+    // Give the new user a ready-to-use set of default categories.
+    // Fire-and-forget is intentional: a seeding failure should not block login.
+    await this.categoriesService.seedDefaultsForUser(user.id);
 
     return this.issueTokenPair({ sub: user.id, email: user.email });
   }

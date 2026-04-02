@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from '../auth.service';
 import { UsersRepository } from '../../users/users.repository';
+import { CategoriesService } from '../../categories/categories.service';
 
 // Mock bcrypt at module level — real hashing takes ~100ms per call at 12 rounds.
 // Without this, a suite of 15 tests would take ~30 seconds. With mocks: <1s.
@@ -50,6 +51,11 @@ const mockConfigService = {
   getOrThrow: jest.fn().mockReturnValue('test-secret'),
 };
 
+const mockCategoriesService = {
+  // Mock the fire-and-forget seeding method so it doesn't crash the test
+  seedDefaultsForUser: jest.fn().mockResolvedValue(undefined),
+};
+
 // ─── Suite ────────────────────────────────────────────────────────────────────
 
 describe('AuthService', () => {
@@ -62,6 +68,7 @@ describe('AuthService', () => {
         { provide: UsersRepository, useValue: mockUsersRepository },
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
+        { provide: CategoriesService, useValue: mockCategoriesService },
       ],
     }).compile();
 
@@ -103,6 +110,9 @@ describe('AuthService', () => {
         email: USER_EMAIL,
         passwordHash: HASHED_PASSWORD,
       });
+      expect(mockCategoriesService.seedDefaultsForUser).toHaveBeenCalledWith(
+        USER_ID,
+      );
     });
 
     it('throws ConflictException when email is already registered', async () => {
