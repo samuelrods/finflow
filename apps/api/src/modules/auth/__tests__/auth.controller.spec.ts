@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Response } from 'express';
 import { AuthController } from '../auth.controller';
 import { AuthService } from '../auth.service';
+import { API_PREFIX } from '../../../common/constants';
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -73,7 +74,7 @@ describe('AuthController', () => {
       expect(mockResponse.cookie).toHaveBeenCalledWith(
         'refresh_token',
         REFRESH_TOKEN,
-        expect.objectContaining({ path: '/auth' }),
+        expect.objectContaining({ path: `/${API_PREFIX}/auth` }),
       );
     });
 
@@ -102,7 +103,10 @@ describe('AuthController', () => {
       expect(mockResponse.cookie).toHaveBeenCalledWith(
         'refresh_token',
         REFRESH_TOKEN,
-        expect.objectContaining({ httpOnly: true, path: '/auth' }),
+        expect.objectContaining({
+          httpOnly: true,
+          path: `/${API_PREFIX}/auth`,
+        }),
       );
     });
   });
@@ -154,7 +158,7 @@ describe('AuthController', () => {
 
       expect(mockResponse.clearCookie).toHaveBeenCalledWith(
         'refresh_token',
-        expect.objectContaining({ path: '/auth' }),
+        expect.objectContaining({ path: `/${API_PREFIX}/auth` }),
       );
     });
 
