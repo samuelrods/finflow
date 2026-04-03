@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { CategoriesService } from '../categories.service';
 import { CategoriesRepository } from '../categories.repository';
 import { CreateCategoryDto } from '../dto/create-category.dto';
@@ -24,6 +24,7 @@ const mockCategoriesRepository = {
   create: jest.fn(),
   createMany: jest.fn(),
   update: jest.fn(),
+  countTransactions: jest.fn(),
   delete: jest.fn(),
 };
 
@@ -163,8 +164,9 @@ describe('CategoriesService', () => {
   // ─── delete ───────────────────────────────────────────────────────────────
 
   describe('delete', () => {
-    it('deletes the category when it belongs to the user', async () => {
+    it('deletes the category when it belongs to the user and has no transactions', async () => {
       mockCategoriesRepository.findOneForUser.mockResolvedValue(mockCategory);
+      mockCategoriesRepository.countTransactions.mockResolvedValue(0);
       mockCategoriesRepository.delete.mockResolvedValue(undefined);
 
       await service.delete(CATEGORY_ID, USER_ID);
@@ -174,11 +176,32 @@ describe('CategoriesService', () => {
 
     it('returns void on successful deletion', async () => {
       mockCategoriesRepository.findOneForUser.mockResolvedValue(mockCategory);
+      mockCategoriesRepository.countTransactions.mockResolvedValue(0);
       mockCategoriesRepository.delete.mockResolvedValue(undefined);
 
       const result = await service.delete(CATEGORY_ID, USER_ID);
 
       expect(result).toBeUndefined();
+    });
+
+    it('throws ConflictException when the category has linked transactions', async () => {
+      mockCategoriesRepository.findOneForUser.mockResolvedValue(mockCategory);
+      mockCategoriesRepository.countTransactions.mockResolvedValue(3);
+
+      await expect(service.delete(CATEGORY_ID, USER_ID)).rejects.toThrow(
+        ConflictException,
+      );
+
+      expect(mockCategoriesRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('includes the transaction count in the ConflictException message', async () => {
+      mockCategoriesRepository.findOneForUser.mockResolvedValue(mockCategory);
+      mockCategoriesRepository.countTransactions.mockResolvedValue(5);
+
+      await expect(service.delete(CATEGORY_ID, USER_ID)).rejects.toThrow(
+        /5 transaction\(s\)/,
+      );
     });
 
     it('throws NotFoundException when the category does not exist for the user', async () => {
@@ -188,6 +211,7 @@ describe('CategoriesService', () => {
         NotFoundException,
       );
 
+      expect(mockCategoriesRepository.countTransactions).not.toHaveBeenCalled();
       expect(mockCategoriesRepository.delete).not.toHaveBeenCalled();
     });
 
@@ -198,6 +222,7 @@ describe('CategoriesService', () => {
         service.delete(CATEGORY_ID, 'other-user-id'),
       ).rejects.toThrow(NotFoundException);
 
+      expect(mockCategoriesRepository.countTransactions).not.toHaveBeenCalled();
       expect(mockCategoriesRepository.delete).not.toHaveBeenCalled();
     });
   });

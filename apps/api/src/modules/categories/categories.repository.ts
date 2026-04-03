@@ -35,6 +35,10 @@ export class CategoriesRepository {
     return this.prisma.category.update({ where: { id }, data });
   }
 
+  countTransactions(id: string): Promise<number> {
+    return this.prisma.transaction.count({ where: { categoryId: id } });
+  }
+
   delete(id: string): Promise<Category> {
     return this.prisma.category.delete({ where: { id } });
   }

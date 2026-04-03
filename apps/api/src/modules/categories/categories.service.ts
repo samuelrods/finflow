@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CategoriesRepository } from './categories.repository';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -57,6 +61,16 @@ export class CategoriesService {
 
     if (!category) {
       throw new NotFoundException('Category not found');
+    }
+
+    const transactionCount =
+      await this.categoriesRepository.countTransactions(id);
+
+    if (transactionCount > 0) {
+      throw new ConflictException(
+        `Cannot delete category "${category.name}" because it has ${transactionCount} transaction(s) linked to it. ` +
+          'Reassign or delete those transactions first.',
+      );
     }
 
     await this.categoriesRepository.delete(id);
