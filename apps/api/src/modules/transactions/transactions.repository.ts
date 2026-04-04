@@ -13,11 +13,13 @@ export class TransactionsRepository {
   findAllForUser(
     userId: string,
     where?: Prisma.TransactionWhereInput,
+    pagination?: { skip?: number; take?: number },
   ): Promise<TransactionWithCategory[]> {
     return this.prisma.transaction.findMany({
       where: { userId, ...where },
       include: { category: true },
       orderBy: { date: 'desc' },
+      ...pagination,
     });
   }
 

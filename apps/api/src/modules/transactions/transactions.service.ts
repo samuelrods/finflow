@@ -11,6 +11,7 @@ import { Prisma } from '../../generated/prisma/browser';
 export interface TransactionListResult {
   data: TransactionWithCategory[];
   total: number;
+  pages: number;
 }
 
 @Injectable()
@@ -24,13 +25,19 @@ export class TransactionsService {
     query: QueryTransactionDto,
   ): Promise<TransactionListResult> {
     const where = this.buildWhereClause(query);
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const skip = (page - 1) * limit;
 
     const [data, total] = await Promise.all([
-      this.transactionsRepository.findAllForUser(userId, where),
+      this.transactionsRepository.findAllForUser(userId, where, {
+        skip,
+        take: limit,
+      }),
       this.transactionsRepository.countForUser(userId, where),
     ]);
 
-    return { data, total };
+    return { data, total, pages: Math.ceil(total / limit) };
   }
 
   async getOne(id: string, userId: string): Promise<TransactionWithCategory> {

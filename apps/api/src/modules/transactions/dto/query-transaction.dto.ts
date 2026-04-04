@@ -1,4 +1,13 @@
-import { IsEnum, IsOptional, IsUUID, Matches } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsUUID,
+  Matches,
+  Max,
+  Min,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 import { TransactionType } from '../enums/transaction-type.enum';
 
 export class QueryTransactionDto {
@@ -16,4 +25,19 @@ export class QueryTransactionDto {
   @IsOptional()
   @IsEnum(TransactionType)
   type?: TransactionType;
+
+  /** Page number, 1-indexed. Defaults to 1. */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  /** Number of items per page. Defaults to 20, max 100. */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
 }
