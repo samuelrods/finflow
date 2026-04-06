@@ -30,6 +30,25 @@ export class TransactionsRepository {
     return this.prisma.transaction.count({ where: { userId, ...where } });
   }
 
+  async aggregateByType(
+    userId: string,
+    where?: Prisma.TransactionWhereInput,
+  ): Promise<{ incomeTotal: number; expenseTotal: number }> {
+    const rows = await this.prisma.transaction.groupBy({
+      by: ['type'],
+      where: { userId, ...where },
+      _sum: { amount: true },
+    });
+
+    const income = rows.find((r) => r.type === 'INCOME')?._sum.amount ?? 0;
+    const expense = rows.find((r) => r.type === 'EXPENSE')?._sum.amount ?? 0;
+
+    return {
+      incomeTotal: Number(income),
+      expenseTotal: Number(expense),
+    };
+  }
+
   findOneForUser(
     id: string,
     userId: string,
