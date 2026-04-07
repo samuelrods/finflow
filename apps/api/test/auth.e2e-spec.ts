@@ -116,11 +116,15 @@ describe('AuthController (e2e)', () => {
         .send(validUser)
         .expect(201);
 
+      assertIsTokenResponse(response.body);
       accessToken = response.body.accessToken;
       const cookies = response.headers['set-cookie'];
-      refreshTokenCookie = Array.isArray(cookies) ? cookies[0] : cookies;
+      if (Array.isArray(cookies)) {
+        refreshTokenCookie = String(cookies[0]);
+      } else if (typeof cookies === 'string') {
+        refreshTokenCookie = cookies;
+      }
     });
-
     it('should reject requests without Authorization header', async () => {
       await request(app.getHttpServer())
         .post(`/${API_PREFIX}/auth/logout`)

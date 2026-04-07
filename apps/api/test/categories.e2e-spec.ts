@@ -166,6 +166,7 @@ describe('CategoriesController (e2e)', () => {
           email: 'hacker@example.com',
           password: 'password123',
         });
+      assertIsTokenResponse(res.body);
       otherUserToken = res.body.accessToken;
     });
 

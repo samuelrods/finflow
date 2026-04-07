@@ -181,6 +181,7 @@ describe('TransactionsController (e2e)', () => {
           email: 'hacker_tx@example.com',
           password: 'password123',
         });
+      assertIsTokenResponse(res.body);
       otherUserToken = res.body.accessToken;
 
       const user = await prisma.user.findUnique({
@@ -197,7 +198,7 @@ describe('TransactionsController (e2e)', () => {
 
     it("should not allow reading another user's transaction", async () => {
       // Create transaction for user 1
-      const transaction = await prisma.transaction.create({
+      await prisma.transaction.create({
         data: {
           amount: 500,
           date: new Date(),
