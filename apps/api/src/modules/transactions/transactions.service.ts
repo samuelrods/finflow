@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import {
   TransactionsRepository,
   TransactionWithCategory,
@@ -7,6 +11,7 @@ import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { QueryTransactionDto } from './dto/query-transaction.dto';
 import { Prisma } from '../../generated/prisma/browser';
+import { CategoriesService } from '../categories/categories.service';
 
 export interface TransactionListResult {
   data: TransactionWithCategory[];
@@ -21,6 +26,7 @@ export interface TransactionListResult {
 export class TransactionsService {
   constructor(
     private readonly transactionsRepository: TransactionsRepository,
+    private readonly categoriesService: CategoriesService,
   ) {}
 
   async getAll(
@@ -69,10 +75,26 @@ export class TransactionsService {
     return transaction;
   }
 
+  private async validateCategoryOwnership(categoryId: string, userId: string) {
+    try {
+      // getOne or similar could be exposed, but we can reuse the update check, or we can just fetch all categories for now.
+      // Actually CategoriesService has no getOne method, so let's get all and find.
+      const categories = await this.categoriesService.getAll(userId);
+      const category = categories.find((c) => c.id === categoryId);
+      if (!category) {
+        throw new BadRequestException('Invalid category');
+      }
+    } catch (error) {
+      throw new BadRequestException('Invalid category');
+    }
+  }
+
   async create(
     userId: string,
     dto: CreateTransactionDto,
   ): Promise<TransactionWithCategory> {
+    await this.validateCategoryOwnership(dto.categoryId, userId);
+
     const transaction = await this.transactionsRepository.create({
       amount: dto.amount,
       description: dto.description,
@@ -94,6 +116,10 @@ export class TransactionsService {
     dto: UpdateTransactionDto,
   ): Promise<TransactionWithCategory> {
     await this.getOne(id, userId);
+
+    if (dto.categoryId) {
+      await this.validateCategoryOwnership(dto.categoryId, userId);
+    }
 
     await this.transactionsRepository.update(id, {
       amount: dto.amount,
