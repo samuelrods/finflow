@@ -61,3 +61,44 @@ Always rely on the targeted `-V` rebuild method detailed above to manage stale d
 ## Architecture Decisions
 
 The API follows a modular layered architecture (Controller → Service → Repository), organized by feature slice rather than by layer. Domain-Driven Design was considered and deliberately set aside: DDD's full apparatus — aggregates, domain events, and bounded contexts — exists to manage domains where the business logic itself is the hard problem. A personal finance tracker doesn't have that problem. Its complexity lies in the plumbing, not the domain rules. Applying DDD here would have introduced significant ceremony with no corresponding reduction in complexity, a pattern sometimes called "architecture astronomy." The design borrows selectively from DDD's tactical patterns — the repository abstraction, strict DTO boundaries, and domain-aligned naming — while keeping the overall structure simple, readable, and proportionate to the problem. Each feature module is fully self-contained, making it easy to locate, modify, and test in isolation.
+
+## Testing
+
+The project includes comprehensive test coverage, divided into unit tests and integration (e2e) tests.
+
+### Unit Testing
+
+Unit tests are co-located with their respective modules (often inside `__tests__` directories or ending in `.spec.ts`). They focus on testing individual services, controllers, and utilities in isolation, typically mocking external dependencies such as the database.
+
+To run the unit tests:
+
+```bash
+cd apps/api
+npm run test
+```
+
+To run unit tests in watch mode during development:
+
+```bash
+npm run test:watch
+```
+
+To run unit tests with coverage reporting:
+
+```bash
+npm run test:cov
+```
+
+### Integration (e2e) Testing
+
+End-to-end (e2e) integration tests validate the full request-response lifecycle of the API, including database interactions. They are located in the `apps/api/test/` directory.
+
+These tests hit a real PostgreSQL database to ensure that queries, module wiring, validation, and serialization all work correctly together.
+
+**Note:** The e2e tests require access to the environment variables and the database network. You must run them directly inside the `api` container while the Docker Compose environment is running. Be aware that the tests will clear the database before each suite to ensure a clean state.
+
+To run the e2e tests:
+
+```bash
+docker compose exec api npm run test:e2e
+```
