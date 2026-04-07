@@ -25,6 +25,7 @@ export interface TransactionListResponse {
   pages: number;
   incomeTotal: number;
   expenseTotal: number;
+  categoryTotals: { categoryId: string; total: number }[];
 }
 
 export interface TransactionFilters {
