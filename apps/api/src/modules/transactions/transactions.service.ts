@@ -84,7 +84,7 @@ export class TransactionsService {
       if (!category) {
         throw new BadRequestException('Invalid category');
       }
-    } catch (error) {
+    } catch {
       throw new BadRequestException('Invalid category');
     }
   }
