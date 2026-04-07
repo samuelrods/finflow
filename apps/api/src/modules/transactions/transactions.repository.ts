@@ -49,6 +49,22 @@ export class TransactionsRepository {
     };
   }
 
+  async aggregateByCategory(
+    userId: string,
+    where?: Prisma.TransactionWhereInput,
+  ): Promise<{ categoryId: string; total: number }[]> {
+    const rows = await this.prisma.transaction.groupBy({
+      by: ['categoryId'],
+      where: { userId, ...where, type: 'EXPENSE' },
+      _sum: { amount: true },
+    });
+
+    return rows.map((r) => ({
+      categoryId: r.categoryId,
+      total: Number(r._sum.amount ?? 0),
+    }));
+  }
+
   findOneForUser(
     id: string,
     userId: string,

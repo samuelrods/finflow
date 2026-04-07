@@ -14,6 +14,7 @@ export interface TransactionListResult {
   pages: number;
   incomeTotal: number;
   expenseTotal: number;
+  categoryTotals: { categoryId: string; total: number }[];
 }
 
 @Injectable()
@@ -31,16 +32,28 @@ export class TransactionsService {
     const limit = query.limit ?? 20;
     const skip = (page - 1) * limit;
 
-    const [data, total, { incomeTotal, expenseTotal }] = await Promise.all([
-      this.transactionsRepository.findAllForUser(userId, where, {
-        skip,
-        take: limit,
-      }),
-      this.transactionsRepository.countForUser(userId, where),
-      this.transactionsRepository.aggregateByType(userId, where),
-    ]);
+    const [data, total, { incomeTotal, expenseTotal }, categoryTotals] =
+      await Promise.all([
+        this.transactionsRepository.findAllForUser(userId, where, {
+          skip,
+          take: limit,
+        }),
+        this.transactionsRepository.countForUser(userId, where),
+        this.transactionsRepository.aggregateByType(userId, where),
+        this.transactionsRepository.aggregateByCategory(userId, where),
+      ]);
 
-    return { data, total, pages: Math.ceil(total / limit), incomeTotal, expenseTotal };
+    console.log('getAll where:', where);
+    console.log('categoryTotals:', categoryTotals);
+
+    return {
+      data,
+      total,
+      pages: Math.ceil(total / limit),
+      incomeTotal,
+      expenseTotal,
+      categoryTotals,
+    };
   }
 
   async getOne(id: string, userId: string): Promise<TransactionWithCategory> {
