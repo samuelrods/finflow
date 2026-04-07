@@ -1,29 +1,66 @@
 # Personal Finance Tracker
 
+## Architecture Diagram
+
+```mermaid
+graph TD
+    User([User])
+    
+    subgraph "Docker Compose Environment"
+        Web["Web Frontend\n(Next.js)"]
+        API["API Backend\n(Nest.js)"]
+        DB[("PostgreSQL\n(Database)")]
+        Studio["Prisma Studio\n(DB GUI)"]
+    end
+    
+    User -->|HTTP (Port 3000)| Web
+    User -->|HTTP (Port 3001)| API
+    User -->|HTTP (Port 5555)| Studio
+    
+    Web -->|HTTP Requests| API
+    API -->|Prisma ORM| DB
+    Studio -->|Prisma ORM| DB
+```
+
 ## Folder Structure
 
 ```
 finance-tracker/
 ├── apps/
-│   ├── api/          ← Nest.js
-│   └── web/          ← Next.js
-├── shared/           ← shared TS types/DTOs
+│   ├── api/          ← Nest.js Backend
+│   └── web/          ← Next.js Frontend
 ├── docker-compose.yml
 ├── .env.example
 └── README.md
 ```
 
-## Local Development Environment
-
-This project utilizes Docker Compose to manage an isolated development environment. Because we use anonymous volumes to isolate Node.js dependencies from the host machine's operating system, standard dependency management requires specific operational workflows to maintain state and avoid unexpected data loss.
+## Setup Instructions
 
 ### Initial Setup
 
-To start the application for the first time, or after a complete environment teardown, build the images and start the containers in detached mode:
+1. **Environment Variables**
+   Create a `.env` file in the root directory by copying the provided example template:
+   ```bash
+   cp .env.example .env
+   ```
+   *(Update the `.env` values if necessary, especially secrets).*
 
-```bash
-docker compose up -d --build
-```
+2. **Start the Infrastructure**
+   Build the Docker images and start the containers in detached mode:
+   ```bash
+   docker compose up -d --build
+   ```
+
+3. **Database Initialization**
+   Apply the existing Prisma migrations to initialize the PostgreSQL database schema. Run this command inside the `api` container:
+   ```bash
+   docker compose exec api npx prisma migrate dev
+   ```
+
+4. **Access the Application**
+   - **Frontend:** [http://localhost:3000](http://localhost:3000)
+   - **Backend API:** [http://localhost:3001/api/v1](http://localhost:3001/api/v1)
+   - **Prisma Studio (DB Admin):** To start Prisma studio, start docker compose with the tools profile (`docker compose --profile tools up -d`) and visit [http://localhost:5555](http://localhost:5555).
 
 ### Dependency Management and State
 
@@ -58,9 +95,12 @@ docker compose down
 
 Always rely on the targeted `-V` rebuild method detailed above to manage stale dependency state, rather than destroying the entire environment infrastructure to fix a local package issue.
 
-## Architecture Decisions
+## Design Decisions
 
-The API follows a modular layered architecture (Controller → Service → Repository), organized by feature slice rather than by layer. Domain-Driven Design was considered and deliberately set aside: DDD's full apparatus — aggregates, domain events, and bounded contexts — exists to manage domains where the business logic itself is the hard problem. A personal finance tracker doesn't have that problem. Its complexity lies in the plumbing, not the domain rules. Applying DDD here would have introduced significant ceremony with no corresponding reduction in complexity, a pattern sometimes called "architecture astronomy." The design borrows selectively from DDD's tactical patterns — the repository abstraction, strict DTO boundaries, and domain-aligned naming — while keeping the overall structure simple, readable, and proportionate to the problem. Each feature module is fully self-contained, making it easy to locate, modify, and test in isolation.
+- **Monorepo-style structure:** The project is divided into an `api` (backend) and `web` (frontend) directory to keep the full stack co-located while separating concerns and allowing shared typings/configurations if needed.
+- **Dockerized Development:** We rely heavily on Docker Compose to guarantee environment parity and isolate dependencies. This simplifies onboarding but necessitates strict dependency management workflows.
+- **Modular Architecture vs. DDD:** The API follows a modular layered architecture (Controller → Service → Repository), organized by feature slice rather than by layer. Domain-Driven Design was considered and deliberately set aside: DDD's full apparatus — aggregates, domain events, and bounded contexts — exists to manage domains where the business logic itself is the hard problem. A personal finance tracker doesn't have that problem. Its complexity lies in the plumbing, not the domain rules. Applying DDD here would have introduced significant ceremony with no corresponding reduction in complexity, a pattern sometimes called "architecture astronomy." The design borrows selectively from DDD's tactical patterns — the repository abstraction, strict DTO boundaries, and domain-aligned naming — while keeping the overall structure simple, readable, and proportionate to the problem. Each feature module is fully self-contained, making it easy to locate, modify, and test in isolation.
+- **Next.js App Router:** The frontend utilizes the Next.js App Router for optimized server-side rendering and streamlined layouts, paired with Tailwind CSS and accessible UI primitives for rapid component development.
 
 ## Testing
 
