@@ -42,7 +42,7 @@ export default function LoginPage() {
         </CardHeader>
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pb-4">
             {/* API-level error (wrong credentials, server down, etc.) */}
             {login.error && (
               <div className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">

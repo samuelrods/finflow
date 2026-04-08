@@ -49,7 +49,7 @@ export default function RegisterPage() {
         </CardHeader>
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pb-4">
             {register_.error && (
               <div className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">
                 {register_.error.message}
