@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import {
   Card,
@@ -148,9 +149,13 @@ export default function DashboardPage() {
             <ArrowUpCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-emerald-600">
-              ${incomeTotal.toFixed(2)}
-            </div>
+            {isLoadingTransactions ? (
+              <Skeleton className="h-8 w-28" />
+            ) : (
+              <div className="text-2xl font-bold text-emerald-600">
+                ${incomeTotal.toFixed(2)}
+              </div>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -161,9 +166,13 @@ export default function DashboardPage() {
             <ArrowDownCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-rose-600">
-              ${expenseTotal.toFixed(2)}
-            </div>
+            {isLoadingTransactions ? (
+              <Skeleton className="h-8 w-28" />
+            ) : (
+              <div className="text-2xl font-bold text-rose-600">
+                ${expenseTotal.toFixed(2)}
+              </div>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -172,11 +181,15 @@ export default function DashboardPage() {
             <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div
-              className={`text-2xl font-bold ${netBalance >= 0 ? "text-emerald-600" : "text-rose-600"}`}
-            >
-              ${netBalance.toFixed(2)}
-            </div>
+            {isLoadingTransactions ? (
+              <Skeleton className="h-8 w-28" />
+            ) : (
+              <div
+                className={`text-2xl font-bold ${netBalance >= 0 ? "text-emerald-600" : "text-rose-600"}`}
+              >
+                ${netBalance.toFixed(2)}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -214,11 +227,21 @@ export default function DashboardPage() {
                   </Pie>
                 </PieChart>
               </ChartContainer>
+            ) : isLoadingTransactions || isLoadingCategories ? (
+              <div className="flex h-[300px] items-center justify-center">
+                <Skeleton className="h-[160px] w-[160px] rounded-full" />
+              </div>
             ) : (
-              <div className="flex h-[300px] items-center justify-center text-muted-foreground border border-dashed rounded-md">
-                {isLoadingTransactions || isLoadingCategories
-                  ? "Loading..."
-                  : "No expenses this month."}
+              <div className="flex flex-col h-[300px] items-center justify-center text-center text-muted-foreground border border-dashed rounded-md space-y-3">
+                <p>No transactions found for this month.</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsAddTransactionOpen(true)}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add your first transaction
+                </Button>
               </div>
             )}
           </CardContent>
