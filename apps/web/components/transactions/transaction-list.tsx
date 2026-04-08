@@ -117,54 +117,58 @@ export function TransactionList({
         {transactions.map((t) => (
           <div
             key={t.id}
-            className="flex items-center gap-3 px-4 py-3 bg-background hover:bg-muted/50 transition-colors"
+            className="flex flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-2 px-4 py-3 bg-background hover:bg-muted/50 transition-colors"
           >
-            <span className="text-xl w-8 text-center shrink-0">
-              {t.category.icon ?? "💳"}
-            </span>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium truncate">
-                  {t.category.name}
-                </span>
-                <Badge variant={t.type === "INCOME" ? "income" : "expense"}>
-                  {t.type === "INCOME" ? "Income" : "Expense"}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-2 mt-0.5">
-                {t.description && (
-                  <span className="text-xs text-muted-foreground truncate">
-                    {t.description}
+            <div className="flex items-center gap-3 flex-1 min-w-0 w-full sm:w-auto">
+              <span className="text-xl w-8 text-center shrink-0">
+                {t.category.icon ?? "💳"}
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium truncate">
+                    {t.category.name}
                   </span>
-                )}
-                <span className="text-xs text-muted-foreground">
-                  {formatDate(t.date)}
-                </span>
+                  <Badge variant={t.type === "INCOME" ? "income" : "expense"}>
+                    {t.type === "INCOME" ? "Income" : "Expense"}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-2 mt-0.5">
+                  {t.description && (
+                    <span className="text-xs text-muted-foreground truncate">
+                      {t.description}
+                    </span>
+                  )}
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    {formatDate(t.date)}
+                  </span>
+                </div>
               </div>
             </div>
-            <span
-              className={`text-sm font-semibold tabular-nums shrink-0 ${t.type === "INCOME" ? "text-emerald-600" : "text-red-600"}`}
-            >
-              {formatAmount(t.amount, t.type)}
-            </span>
-            <div className="flex items-center gap-1 shrink-0">
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => setEditingTransaction(t)}
-                aria-label="Edit"
+            <div className="flex items-center justify-between w-full sm:w-auto pl-11 sm:pl-0 shrink-0">
+              <span
+                className={`text-sm font-semibold tabular-nums shrink-0 ${t.type === "INCOME" ? "text-emerald-600" : "text-red-600"}`}
               >
-                <Pencil />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => setDeletingTransaction(t)}
-                aria-label="Delete"
-                className="text-destructive hover:text-destructive"
-              >
-                <Trash2 />
-              </Button>
+                {formatAmount(t.amount, t.type)}
+              </span>
+              <div className="flex items-center gap-1 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => setEditingTransaction(t)}
+                  aria-label="Edit"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => setDeletingTransaction(t)}
+                  aria-label="Delete"
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         ))}

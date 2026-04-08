@@ -115,76 +115,89 @@ function TransactionsPageContent() {
           Dashboard
         </Link>
       </div>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon-sm"
-            onClick={() => handleMonthChange((m) => addMonths(m || currentMonth(), -1))}
-            aria-label="Previous month"
-          >
-            <ChevronLeft />
-          </Button>
-          <span className="text-base font-semibold min-w-36 text-center">
-            {getMonthLabel(month)}
-          </span>
-          <Button
-            variant="outline"
-            size="icon-sm"
-            onClick={() => handleMonthChange((m) => addMonths(m || currentMonth(), 1))}
-            aria-label="Next month"
-          >
-            <ChevronRight />
-          </Button>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <Button
+              variant="outline"
+              size="icon-sm"
+              onClick={() =>
+                handleMonthChange((m) => addMonths(m || currentMonth(), -1))
+              }
+              aria-label="Previous month"
+            >
+              <ChevronLeft />
+            </Button>
+            <span className="text-sm sm:text-base font-semibold w-28 sm:w-auto sm:min-w-36 text-center">
+              {getMonthLabel(month)}
+            </span>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              onClick={() =>
+                handleMonthChange((m) => addMonths(m || currentMonth(), 1))
+              }
+              aria-label="Next month"
+            >
+              <ChevronRight />
+            </Button>
+          </div>
           <Button
             variant={month === "" ? "default" : "outline"}
             size="sm"
-            onClick={() => handleMonthChange(month === "" ? currentMonth() : "")}
+            onClick={() =>
+              handleMonthChange(month === "" ? currentMonth() : "")
+            }
             aria-label="Toggle all time view"
+            className="text-xs sm:text-sm px-2 sm:px-3"
           >
             All time
           </Button>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" asChild>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button variant="outline" className="flex-1 sm:flex-none" asChild>
             <Link href="/dashboard/categories">Categories</Link>
           </Button>
-          <Button onClick={() => setFormOpen(true)}>
-            <Plus />
-            Add Transaction
+          <Button
+            className="flex-1 sm:flex-none"
+            onClick={() => setFormOpen(true)}
+          >
+            <Plus className="mr-1 h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Add Transaction</span>
+            <span className="sm:hidden">Add</span>
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <div className="rounded-xl border bg-background p-4">
           <p className="text-xs text-muted-foreground">Income</p>
-          <p className="text-lg font-bold text-emerald-600 mt-1">
+          <p className="text-lg font-bold text-emerald-600 mt-1 truncate">
             {formatCurrency(totalIncome)}
           </p>
         </div>
         <div className="rounded-xl border bg-background p-4">
           <p className="text-xs text-muted-foreground">Expenses</p>
-          <p className="text-lg font-bold text-red-600 mt-1">
+          <p className="text-lg font-bold text-red-600 mt-1 truncate">
             {formatCurrency(totalExpenses)}
           </p>
         </div>
-        <div className="rounded-xl border bg-background p-4">
+        <div className="rounded-xl border bg-background p-4 col-span-2 sm:col-span-1">
           <p className="text-xs text-muted-foreground">Balance</p>
           <p
-            className={`text-lg font-bold mt-1 ${netBalance >= 0 ? "text-emerald-600" : "text-red-600"}`}
+            className={`text-lg font-bold mt-1 truncate ${netBalance >= 0 ? "text-emerald-600" : "text-red-600"}`}
           >
             {formatCurrency(netBalance)}
           </p>
         </div>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex flex-col sm:flex-row gap-2">
         <Select
           value={categoryId || "all"}
           onValueChange={handleCategoryChange}
         >
-          <SelectTrigger className="w-44">
+          <SelectTrigger className="w-full sm:w-44">
             <SelectValue placeholder="All categories" />
           </SelectTrigger>
           <SelectContent>
@@ -198,11 +211,8 @@ function TransactionsPageContent() {
           </SelectContent>
         </Select>
 
-        <Select
-          value={type || "all"}
-          onValueChange={handleTypeChange}
-        >
-          <SelectTrigger className="w-36">
+        <Select value={type || "all"} onValueChange={handleTypeChange}>
+          <SelectTrigger className="w-full sm:w-36">
             <SelectValue placeholder="All types" />
           </SelectTrigger>
           <SelectContent>
