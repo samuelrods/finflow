@@ -12,7 +12,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  Wallet,
+  Plus,
+} from "lucide-react";
 import { useTransactions } from "@/hooks/use-transactions";
 import { useCategories } from "@/hooks/use-categories";
 import {
@@ -21,6 +29,8 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Pie, PieChart, Cell } from "recharts";
+import { TransactionList } from "@/components/transactions/transaction-list";
+import { TransactionForm } from "@/components/transactions/transaction-form";
 
 const CHART_COLORS = [
   "#0ea5e9", // sky-500
@@ -43,6 +53,7 @@ export default function DashboardPage() {
   const initialMonthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}`;
 
   const [monthStr, setMonthStr] = useState(initialMonthStr);
+  const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
 
   const { data: transactionsData, isLoading: isLoadingTransactions } =
     useTransactions({ month: monthStr });
@@ -134,6 +145,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+            <ArrowUpCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-emerald-600">
@@ -146,6 +158,7 @@ export default function DashboardPage() {
             <CardTitle className="text-sm font-medium">
               Total Expenses
             </CardTitle>
+            <ArrowDownCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-rose-600">
@@ -156,6 +169,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Net Balance</CardTitle>
+            <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div
@@ -216,6 +230,13 @@ export default function DashboardPage() {
             <CardDescription>Manage your transactions</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <Button
+              className="w-full justify-start"
+              onClick={() => setIsAddTransactionOpen(true)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Quick Add Transaction
+            </Button>
             <Button asChild className="w-full justify-start" variant="outline">
               <Link href="/dashboard/transactions">
                 <ArrowRight className="mr-2 h-4 w-4" />
@@ -231,6 +252,26 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Transactions</CardTitle>
+          <CardDescription>
+            Your most recent activity for {monthStr}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TransactionList
+            transactions={transactionsData?.data?.slice(0, 5) || []}
+            isLoading={isLoadingTransactions}
+          />
+        </CardContent>
+      </Card>
+
+      <TransactionForm
+        open={isAddTransactionOpen}
+        onOpenChange={setIsAddTransactionOpen}
+      />
     </main>
   );
 }
