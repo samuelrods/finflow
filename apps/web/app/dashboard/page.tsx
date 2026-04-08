@@ -20,7 +20,20 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { Pie, PieChart, Cell } from "recharts";
+
+const CHART_COLORS = [
+  "#0ea5e9", // sky-500
+  "#10b981", // emerald-500
+  "#f59e0b", // amber-500
+  "#ef4444", // red-500
+  "#8b5cf6", // violet-500
+  "#ec4899", // pink-500
+  "#f97316", // orange-500
+  "#14b8a6", // teal-500
+  "#6366f1", // indigo-500
+  "#84cc16", // lime-500
+];
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -53,15 +66,26 @@ export default function DashboardPage() {
           total: ct.total,
         };
       })
-      .sort((a, b) => b.total - a.total);
+      .sort((a, b) => b.total - a.total)
+      .map((item, index) => ({
+        ...item,
+        fill: CHART_COLORS[index % CHART_COLORS.length],
+      }));
   }, [categoryTotals, categoriesData]);
 
-  const chartConfig = {
-    total: {
-      label: "Total Spent",
-      color: "var(--color-primary)",
-    },
-  };
+  // Dynamically generate chart config to support our dynamic categories
+  const chartConfig = useMemo(() => {
+    const config: Record<string, { label: string; color?: string }> = {
+      total: { label: "Total Spent" },
+    };
+    chartData.forEach((item) => {
+      config[item.category] = {
+        label: item.category,
+        color: item.fill,
+      };
+    });
+    return config;
+  }, [chartData]);
 
   const navigateMonth = (direction: -1 | 1) => {
     const [year, m] = monthStr.split("-").map(Number);
@@ -144,33 +168,37 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
+        <Card className="col-span-4 flex flex-col">
           <CardHeader>
             <CardTitle>Spending by Category</CardTitle>
             <CardDescription>
               Your expenses categorized for {monthStr}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1 flex flex-col justify-center">
             {chartData.length > 0 ? (
               <ChartContainer
                 config={chartConfig}
                 className="min-h-[300px] w-full"
               >
-                <BarChart
-                  data={chartData}
-                  margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-                >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="category"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
+                <PieChart>
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent />}
                   />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="total" fill="var(--color-total)" radius={4} />
-                </BarChart>
+                  <Pie
+                    data={chartData}
+                    dataKey="total"
+                    nameKey="category"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={2}
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                </PieChart>
               </ChartContainer>
             ) : (
               <div className="flex h-[300px] items-center justify-center text-muted-foreground border border-dashed rounded-md">
