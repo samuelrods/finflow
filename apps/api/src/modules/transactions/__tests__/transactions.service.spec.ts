@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { TransactionsService } from '../transactions.service';
 import { TransactionsRepository } from '../transactions.repository';
+import { CategoriesService } from '../../categories/categories.service';
 import { TransactionType } from '../enums/transaction-type.enum';
 import { CreateTransactionDto } from '../dto/create-transaction.dto';
 import { UpdateTransactionDto } from '../dto/update-transaction.dto';
@@ -40,6 +41,10 @@ const mockTransactionsRepository = {
   create: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
+  aggregateByType: jest
+    .fn()
+    .mockResolvedValue({ incomeTotal: 0, expenseTotal: 0 }),
+  aggregateByCategory: jest.fn().mockResolvedValue([]),
 };
 
 // ─── Suite ────────────────────────────────────────────────────────────────────
@@ -54,6 +59,12 @@ describe('TransactionsService', () => {
         {
           provide: TransactionsRepository,
           useValue: mockTransactionsRepository,
+        },
+        {
+          provide: CategoriesService,
+          useValue: {
+            getAll: jest.fn().mockResolvedValue([mockCategory]),
+          },
         },
       ],
     }).compile();
@@ -74,7 +85,14 @@ describe('TransactionsService', () => {
 
       const result = await service.getAll(USER_ID, {});
 
-      expect(result).toEqual({ data: [mockTransaction], total: 1 });
+      expect(result).toEqual({
+        data: [mockTransaction],
+        total: 1,
+        pages: 1,
+        incomeTotal: 0,
+        expenseTotal: 0,
+        categoryTotals: [],
+      });
     });
 
     it('calls findAllForUser and countForUser with the user id', async () => {
@@ -86,6 +104,7 @@ describe('TransactionsService', () => {
       expect(mockTransactionsRepository.findAllForUser).toHaveBeenCalledWith(
         USER_ID,
         {},
+        { skip: 0, take: 20 },
       );
       expect(mockTransactionsRepository.countForUser).toHaveBeenCalledWith(
         USER_ID,
@@ -99,7 +118,14 @@ describe('TransactionsService', () => {
 
       const result = await service.getAll(USER_ID, {});
 
-      expect(result).toEqual({ data: [], total: 0 });
+      expect(result).toEqual({
+        data: [],
+        total: 0,
+        pages: 0,
+        incomeTotal: 0,
+        expenseTotal: 0,
+        categoryTotals: [],
+      });
     });
 
     it('runs findAllForUser and countForUser in parallel', async () => {
@@ -138,6 +164,7 @@ describe('TransactionsService', () => {
       expect(mockTransactionsRepository.findAllForUser).toHaveBeenCalledWith(
         USER_ID,
         expectedWhere,
+        { skip: 0, take: 20 },
       );
       expect(mockTransactionsRepository.countForUser).toHaveBeenCalledWith(
         USER_ID,
@@ -156,6 +183,7 @@ describe('TransactionsService', () => {
       expect(mockTransactionsRepository.findAllForUser).toHaveBeenCalledWith(
         USER_ID,
         expectedWhere,
+        { skip: 0, take: 20 },
       );
     });
 
@@ -170,6 +198,7 @@ describe('TransactionsService', () => {
       expect(mockTransactionsRepository.findAllForUser).toHaveBeenCalledWith(
         USER_ID,
         expectedWhere,
+        { skip: 0, take: 20 },
       );
     });
 
@@ -195,6 +224,7 @@ describe('TransactionsService', () => {
       expect(mockTransactionsRepository.findAllForUser).toHaveBeenCalledWith(
         USER_ID,
         expectedWhere,
+        { skip: 0, take: 20 },
       );
     });
 
@@ -213,6 +243,7 @@ describe('TransactionsService', () => {
       expect(mockTransactionsRepository.findAllForUser).toHaveBeenCalledWith(
         USER_ID,
         expectedWhere,
+        { skip: 0, take: 20 },
       );
     });
 
@@ -231,6 +262,7 @@ describe('TransactionsService', () => {
       expect(mockTransactionsRepository.findAllForUser).toHaveBeenCalledWith(
         USER_ID,
         expectedWhere,
+        { skip: 0, take: 20 },
       );
     });
   });
