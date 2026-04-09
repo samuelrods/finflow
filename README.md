@@ -57,7 +57,13 @@ finance-tracker/
    docker compose exec api npx prisma migrate dev
    ```
 
-4. **Access the Application**
+4. **Seed the Database**
+   Populate the database with initial categories and data. Run this command inside the `api` container:
+   ```bash
+   docker compose exec api npx prisma db seed
+   ```
+
+5. **Access the Application**
    - **Frontend:** [http://localhost:3000](http://localhost:3000)
    - **Backend API:** [http://localhost:3001/api/v1](http://localhost:3001/api/v1)
    - **Prisma Studio (DB Admin):** To start Prisma studio, start docker compose with the tools profile (`docker compose --profile tools up -d`) and visit [http://localhost:5555](http://localhost:5555).
