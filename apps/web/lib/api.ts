@@ -13,6 +13,15 @@
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api/v1";
 
+if (!/^https?:\/\//i.test(API_BASE)) {
+  throw new Error(
+    `[api] NEXT_PUBLIC_API_URL must be an absolute URL including the protocol ` +
+      `(e.g. "https://your-api.up.railway.app/api/v1"). ` +
+      `Got: "${API_BASE}". Without the protocol the browser resolves it as a ` +
+      `relative path and requests will be sent to the wrong host.`,
+  );
+}
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
