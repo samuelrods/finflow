@@ -95,7 +95,7 @@ export class AuthController {
     res.cookie('refresh_token', token, {
       httpOnly: true,
       secure: true,
-      sameSite: 'lax',
+      sameSite: 'none',
       maxAge: REFRESH_TOKEN_TTL_MS,
       path: `/${API_PREFIX}/auth`,
     });
