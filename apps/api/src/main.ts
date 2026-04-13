@@ -18,11 +18,13 @@ async function bootstrap() {
       origin: string | undefined,
       callback: (err: Error | null, allow?: boolean) => void,
     ) => {
-      // Allow server-to-server requests (no Origin header) and listed origins
+      // Allow if no origin (e.g. server-to-server) or if it's in the allowed list
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error(`CORS: origin "${origin}" is not allowed`));
+        // Log the blocked origin for debugging but don't throw an exception to avoid 500/502s
+        console.warn(`[CORS] Blocked request from origin: ${origin}`);
+        callback(null, false);
       }
     },
     credentials: true,
@@ -30,6 +32,8 @@ async function bootstrap() {
 
   app.setGlobalPrefix(API_PREFIX);
 
-  await app.listen(process.env.PORT ?? 3000);
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port, '0.0.0.0');
+  console.log(`Server listening on port ${port}`);
 }
 void bootstrap();
