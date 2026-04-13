@@ -1,4 +1,4 @@
-# Personal Finance Tracker
+# FinFlow
 
 ## Architecture Diagram
 

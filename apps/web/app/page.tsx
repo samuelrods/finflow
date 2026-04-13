@@ -23,7 +23,7 @@ export default function LandingPage() {
         <div className="container mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2">
             <Wallet className="h-6 w-6 text-primary" />
-            <span className="font-bold tracking-tight">Finance Tracker</span>
+            <span className="font-bold tracking-tight">FinFlow</span>
           </div>
           <nav className="flex items-center gap-4">
             <Link href="/auth/login">
@@ -135,12 +135,11 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             <Wallet className="h-5 w-5 text-muted-foreground" />
             <span className="text-sm font-medium text-muted-foreground">
-              Finance Tracker
+              FinFlow
             </span>
           </div>
           <p className="text-sm text-muted-foreground text-center sm:text-left">
-            &copy; {new Date().getFullYear()} Finance Tracker. All rights
-            reserved.
+            &copy; {new Date().getFullYear()} FinFlow. All rights reserved.
           </p>
         </div>
       </footer>

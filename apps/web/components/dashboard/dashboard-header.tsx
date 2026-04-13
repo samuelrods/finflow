@@ -13,7 +13,7 @@ export function DashboardHeader() {
     <header className="border-b bg-white px-6 py-4 flex items-center justify-between">
       <div className="flex items-center gap-2">
         <TrendingUp className="size-5 text-primary" />
-        <h1 className="text-xl font-semibold">Finance Tracker</h1>
+        <h1 className="text-xl font-semibold">FinFlow</h1>
       </div>
       <div className="flex items-center gap-4">
         <span className="text-sm text-muted-foreground">{user?.email}</span>
