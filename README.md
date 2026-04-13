@@ -13,9 +13,9 @@ graph TD
         Studio["Prisma Studio\n(DB GUI)"]
     end
     
-    User -->|HTTP (Port 3000)| Web
-    User -->|HTTP (Port 3001)| API
-    User -->|HTTP (Port 5555)| Studio
+    User -->|"HTTP (Port 3000)"| Web
+    User -->|"HTTP (Port 3001)"| API
+    User -->|"HTTP (Port 5555)"| Studio
     
     Web -->|HTTP Requests| API
     API -->|Prisma ORM| DB
