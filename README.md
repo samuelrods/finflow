@@ -2,6 +2,40 @@
 
 FinFlow is a full-stack personal finance tracker built with Next.js, NestJS, and PostgreSQL. It solves the problem of scattered financial records by providing a secure, centralized platform to track income, categorize expenses, and analyze spending habits. Built for developers and privacy-conscious users, it ensures full ownership and control of your financial data without relying on third-party SaaS services.
 
+<details>
+<summary>Table of Contents</summary>
+
+- [Architecture](#architecture)
+  - [Local Development](#local-development)
+  - [Production](#production)
+- [Folder Structure](#folder-structure)
+- [Setup Instructions](#setup-instructions)
+  - [Initial Setup](#initial-setup)
+  - [Dependency Management and State](#dependency-management-and-state)
+  - [Destructive Operations and Hidden Fragilities](#destructive-operations-and-hidden-fragilities)
+- [Local Production Smoke Test](#local-production-smoke-test)
+  - [1. Set a Local API URL](#1-set-a-local-api-url)
+  - [2. Bring the Stack Up](#2-bring-the-stack-up)
+  - [3. Confirm Migrations Ran Cleanly](#3-confirm-migrations-ran-cleanly)
+  - [4. Hit the Health Endpoint](#4-hit-the-health-endpoint)
+  - [5. Seed and Smoke Test the App](#5-seed-and-smoke-test-the-app)
+  - [6. Tear Down](#6-tear-down)
+  - [7. Restore the Production URL Before Deploying](#7-restore-the-production-url-before-deploying)
+- [Production Deployment](#production-deployment)
+  - [Prerequisites](#prerequisites)
+  - [1. Environment Variables](#1-environment-variables)
+  - [2. Configure Nginx](#2-configure-nginx)
+  - [3. Bootstrap SSL (first deployment only)](#3-bootstrap-ssl-first-deployment-only)
+  - [4. Deploy](#4-deploy)
+  - [5. Seed the Database (first deployment only)](#5-seed-the-database-first-deployment-only)
+  - [Subsequent Deploys](#subsequent-deploys)
+- [Design Decisions](#design-decisions)
+- [Testing](#testing)
+  - [Unit Testing](#unit-testing)
+  - [Integration (e2e) Testing](#integration-e2e-testing)
+
+</details>
+
 ## Architecture
 
 ### Local Development
