@@ -110,7 +110,7 @@ Always rely on the targeted `-V` rebuild method detailed above to manage stale d
 
 ## Testing
 
-The project includes comprehensive test coverage, divided into unit tests and integration (e2e) tests.
+The project includes unit and integration tests covering the core domain. The backend API maintains ~88% statement coverage, specifically focusing on the controller and service layers where core business logic resides.
 
 ### Unit Testing
 
