@@ -1,28 +1,62 @@
 # FinFlow
 
-## Architecture Diagram
+## Architecture
+
+### Local Development
 
 ```mermaid
 graph TD
     User([User])
-    
-    subgraph "Docker Compose Environment"
-        Web["Web Frontend\n(Next.js)"]
-        API["API Backend\n(Nest.js)"]
-        DB[("PostgreSQL\n(Database)")]
-        Studio["Prisma Studio\n(DB GUI)"]
+
+    subgraph dev["Docker Compose — Local Development"]
+        Web["Web Frontend\nNext.js\n:3000"]
+        API["API Backend\nNestJS\n:3001"]
+        DB[("PostgreSQL\n:5432")]
+        Studio["Prisma Studio\n:5555"]
     end
-    
-    User -->|"HTTP (Port 3000)"| Web
-    User -->|"HTTP (Port 3001)"| API
-    User -->|"HTTP (Port 5555)"| Studio
-    
-    Web -->|HTTP Requests| API
-    API -->|Prisma ORM| DB
-    Studio -->|Prisma ORM| DB
+
+    User -->|"HTTP :3000"| Web
+    User -->|"HTTP :3001"| API
+    User -->|"HTTP :5555\n(tools profile)"| Studio
+
+    Web -->|"HTTP"| API
+    API -->|"Prisma ORM"| DB
+    Studio -->|"Prisma ORM"| DB
 ```
 
-> **Note:** The architecture shown represents the local development environment. In a production setting, Prisma Studio (Port 5555) is placed behind a tools profile and excluded from the deployment infrastructure entirely.
+> **Note:** Prisma Studio is excluded from the default profile and must be started explicitly with `docker compose --profile tools up -d`.
+
+### Production
+
+```mermaid
+graph TD
+    User([User])
+    LE(["Let's Encrypt"])
+
+    subgraph pub["Public"]
+        Nginx["Nginx\nReverse Proxy\n:80 / :443"]
+    end
+
+    subgraph prod["Docker Internal Network"]
+        Web["Web Frontend\nNext.js"]
+        API["API Backend\nNestJS"]
+        DB[("PostgreSQL")]
+        Migrate["Migrate\n(deploy-time job)"]
+        Certbot["Certbot\n(SSL renewal)"]
+    end
+
+    User -->|"HTTPS :443"| Nginx
+    User -->|"HTTP :80"| Nginx
+    Nginx -->|"/api/*"| API
+    Nginx -->|"/*"| Web
+    Web -->|"HTTP"| API
+    API -->|"Prisma ORM"| DB
+    Migrate -.->|"migrate deploy"| DB
+    Certbot -->|"ACME challenge"| LE
+    Certbot -.->|"cert volume"| Nginx
+```
+
+> **Note:** The database and all application ports are never exposed to the host. Nginx is the sole public entry point. The `migrate` service runs once per deploy and exits — it is not a long-running process.
 
 ## Folder Structure
 
@@ -102,6 +136,147 @@ docker compose down
 **Critical Warning:** Executing `docker compose down -v` is a nuclear option. The `-v` flag destroys all volumes declared in the Docker configuration, including the persistent `postgres_data` volume. Running this command will permanently wipe your local development database. 
 
 Always rely on the targeted `-V` rebuild method detailed above to manage stale dependency state, rather than destroying the entire environment infrastructure to fix a local package issue.
+
+## Local Production Smoke Test
+
+Before deploying to your VPS, you can run the full production stack locally to verify that the production images build correctly, migrations run cleanly, and the application works end-to-end — all without needing a domain name or SSL certificates.
+
+A `docker-compose.test.yml` override is provided for this purpose. It layers on top of `docker-compose.prod.yml`, using the exact same Dockerfiles and service wiring, but exposes the application ports directly to the host and disables Nginx and Certbot.
+
+### 1. Set a Local API URL
+
+`NEXT_PUBLIC_API_URL` is baked into the Next.js bundle at build time. Temporarily point it at the locally exposed API port:
+
+```
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
+
+### 2. Bring the Stack Up
+
+```bash
+docker compose -f docker-compose.prod.yml -f docker-compose.test.yml up -d --build
+```
+
+This builds the production images from scratch and starts services in the correct order: `db` (healthy) → `migrate` (completes) → `api` → `web`.
+
+### 3. Confirm Migrations Ran Cleanly
+
+```bash
+docker compose -f docker-compose.prod.yml -f docker-compose.test.yml logs migrate
+```
+
+Prisma will report which migrations were applied. The service should exit with no errors.
+
+### 4. Hit the Health Endpoint
+
+The health controller pings the database through Prisma, so a `200` response confirms both the API build and the database connection are working:
+
+```bash
+curl http://localhost:3001/api/v1/health
+```
+
+Expected response:
+
+```json
+{"status":"ok","info":{"database":{"status":"up"}},"error":{},"details":{"database":{"status":"up"}}}
+```
+
+### 5. Seed and Smoke Test the App
+
+```bash
+docker compose -f docker-compose.prod.yml -f docker-compose.test.yml run --rm migrate npx prisma db seed
+```
+
+Then open [http://localhost:3000](http://localhost:3000) and run through the full user flow — log in, create a transaction, check the dashboard. This exercises the API, database, and frontend all at once.
+
+### 6. Tear Down
+
+```bash
+# Stops containers, preserves the postgres_data volume
+docker compose -f docker-compose.prod.yml -f docker-compose.test.yml down
+```
+
+### 7. Restore the Production URL Before Deploying
+
+Switch `NEXT_PUBLIC_API_URL` back to your real domain before pushing to the VPS. The images are rebuilt on the VPS during deployment, so the correct URL will be baked in at that point:
+
+```
+NEXT_PUBLIC_API_URL=https://yourdomain.com
+```
+
+## Production Deployment
+
+The production stack is defined in `docker-compose.prod.yml` and uses Nginx as a reverse proxy with HTTPS via Let's Encrypt. All application ports are internal-only — the only public entry point is Nginx on ports `80` and `443`.
+
+### Prerequisites
+
+- A VPS with Docker and Docker Compose installed
+- A domain name with an `A` record pointing to your VPS IP address
+- Ports `80` and `443` open on your VPS firewall
+
+### 1. Environment Variables
+
+Copy the example template and fill in **production** values, paying close attention to secrets:
+
+```bash
+cp .env.example .env
+```
+
+Set `NEXT_PUBLIC_API_URL` to your domain. This value is baked into the Next.js bundle at build time, so it must be correct before you build the images:
+
+```
+NEXT_PUBLIC_API_URL=https://yourdomain.com
+```
+
+### 2. Configure Nginx
+
+Open `nginx/nginx.conf` and replace every occurrence of `YOUR_DOMAIN` with your actual domain name. There are three occurrences — two `server_name` directives and two SSL certificate paths.
+
+### 3. Bootstrap SSL (first deployment only)
+
+Before starting the full stack, obtain your initial Let's Encrypt certificate. This uses Certbot's standalone mode, which temporarily binds port `80` itself — so **nothing else should be running on that port** at this point:
+
+```bash
+docker run --rm \
+  -p 80:80 \
+  -v "./nginx/certbot/conf:/etc/letsencrypt" \
+  -v "./nginx/certbot/www:/var/www/certbot" \
+  certbot/certbot certonly --standalone \
+  --email you@example.com \
+  -d yourdomain.com \
+  --agree-tos \
+  --no-eff-email
+```
+
+Once the command completes, the certificate will be in `nginx/certbot/conf/live/yourdomain.com/`. Nginx is configured to read it from there automatically.
+
+### 4. Deploy
+
+Build the production images and start all services in detached mode:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+The startup order is enforced automatically: the database must pass its healthcheck before migrations run, and the API container will not start until the `migrate` service exits successfully.
+
+### 5. Seed the Database (first deployment only)
+
+Populate the database with initial categories and data. The `migrate` service image already has all the required tooling:
+
+```bash
+docker compose -f docker-compose.prod.yml run --rm migrate npx prisma db seed
+```
+
+### Subsequent Deploys
+
+After pulling new changes, rebuild and restart the stack with the same command used in step 4:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+The `migrate` service re-runs automatically on every deploy, applying any pending migrations before the API restarts. SSL certificates are renewed automatically by the `certbot` service, which wakes up every 12 hours and runs `certbot renew`.
 
 ## Design Decisions
 

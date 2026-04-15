@@ -1,0 +1,41 @@
+# =============================================================================
+# Local production smoke test
+#
+# Layers on top of docker-compose.prod.yml to exercise the full production
+# build pipeline (same Dockerfiles, same service wiring, same startup order)
+# without needing a domain name or SSL certificates.
+#
+# Changes from production:
+#   - api  and web ports are exposed to the host for direct access
+#   - nginx and certbot are placed behind a profile so they don't start
+#
+# Before running, set NEXT_PUBLIC_API_URL=http://localhost:3001 in your .env
+# so the Next.js bundle points at the locally exposed API port.
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml -f docker-compose.test.yml up -d --build
+#
+# Tear down (add -v to also wipe the test database volume):
+#   docker compose -f docker-compose.prod.yml -f docker-compose.test.yml down
+# =============================================================================
+
+services:
+  # Expose the API directly to the host so it can be reached at :3001
+  api:
+    ports:
+      - "3001:3001"
+
+  # Expose the web frontend directly to the host so it can be reached at :3000
+  web:
+    ports:
+      - "3000:3000"
+
+  # Assign nginx and certbot to a profile that is never activated in normal
+  # usage, effectively disabling them for the local smoke test.
+  nginx:
+    profiles:
+      - infra
+
+  certbot:
+    profiles:
+      - infra
