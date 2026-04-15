@@ -1,5 +1,7 @@
 # FinFlow
 
+FinFlow is a full-stack personal finance tracker built with Next.js, NestJS, and PostgreSQL. It solves the problem of scattered financial records by providing a secure, centralized platform to track income, categorize expenses, and analyze spending habits. Built for developers and privacy-conscious users, it ensures full ownership and control of your financial data without relying on third-party SaaS services.
+
 ## Architecture
 
 ### Local Development
