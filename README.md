@@ -30,6 +30,14 @@ FinFlow is a full-stack personal finance tracker built with Next.js, NestJS, and
   - [5. Seed the Database (first deployment only)](#5-seed-the-database-first-deployment-only)
   - [Subsequent Deploys](#subsequent-deploys)
 - [Design Decisions](#design-decisions)
+- [API Reference](#api-reference)
+  - [Base URL & Global Config](#base-url--global-config)
+  - [Authentication](#authentication)
+  - [Health](#health)
+  - [Auth Endpoints](#auth-endpoints)
+  - [Categories Endpoints](#categories-endpoints)
+  - [Transactions Endpoints](#transactions-endpoints)
+  - [Users Endpoints](#users-endpoints)
 - [Testing](#testing)
   - [Unit Testing](#unit-testing)
   - [Integration (e2e) Testing](#integration-e2e-testing)
@@ -320,6 +328,325 @@ The `migrate` service re-runs automatically on every deploy, applying any pendin
 - **Dockerized Development:** We rely heavily on Docker Compose to guarantee environment parity and isolate dependencies. This simplifies onboarding but necessitates strict dependency management workflows.
 - **Modular Architecture vs. DDD:** The API follows a modular layered architecture (Controller → Service → Repository), organized by feature slice rather than by layer. Domain-Driven Design was considered and deliberately set aside: DDD's full apparatus — aggregates, domain events, and bounded contexts — exists to manage domains where the business logic itself is the hard problem. A personal finance tracker doesn't have that problem. Its complexity lies in the plumbing, not the domain rules. Applying DDD here would have introduced significant ceremony with no corresponding reduction in complexity, a pattern sometimes called "architecture astronomy." The design borrows selectively from DDD's tactical patterns — the repository abstraction, strict DTO boundaries, and domain-aligned naming — while keeping the overall structure simple, readable, and proportionate to the problem. Each feature module is fully self-contained, making it easy to locate, modify, and test in isolation.
 - **Next.js App Router:** The frontend utilizes the Next.js App Router for optimized server-side rendering and streamlined layouts, paired with Tailwind CSS and accessible UI primitives for rapid component development.
+
+## API Reference
+
+### Base URL & Global Config
+
+All endpoints are served under the `/api/v1` global prefix.
+
+| Property | Value |
+|---|---|
+| **Base path** | `/api/v1` |
+| **CORS** | Credentials enabled; origin controlled by the `FRONTEND_URL` env var (default: `http://localhost:3000`) |
+| **Cookie parser** | Enabled globally — required for refresh token handling |
+
+---
+
+### Authentication
+
+The API uses a two-token strategy: a short-lived JWT access token and a long-lived httpOnly cookie refresh token.
+
+| Guard | How to provide | Token lifetime |
+|---|---|---|
+| `JwtAuthGuard` | `Authorization: Bearer <accessToken>` header | 15 minutes |
+| `JwtRefreshGuard` | `refresh_token` httpOnly cookie (auto-sent by browser) | 7 days |
+
+The refresh token cookie is path-scoped to `/api/v1/auth`, so it is only transmitted on requests to that sub-path. All non-public endpoints that use `JwtAuthGuard` will return `401 Unauthorized` if the header is missing or the token is expired.
+
+---
+
+### Health
+
+#### `GET /api/v1/health`
+
+Public. Pings the database through Prisma and returns the service health status.
+
+**Response `200 OK`:**
+```finflow/README.md#L1-1
+{"status":"ok","info":{"database":{"status":"up"}},"error":{},"details":{"database":{"status":"up"}}}
+```
+
+Returns `503 Service Unavailable` if the database is unreachable.
+
+---
+
+### Auth Endpoints
+
+#### `POST /api/v1/auth/register`
+
+Public. Creates a new user account and seeds a set of default categories for them. Sets a `refresh_token` httpOnly cookie on success.
+
+**Request body:**
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `email` | string | Yes | Valid email; normalized to lowercase |
+| `password` | string | Yes | Min 8 characters |
+
+**Response `201 Created`:**
+
+| Field | Type | Description |
+|---|---|---|
+| `accessToken` | string | JWT access token, 15-minute lifetime |
+
+**Errors:** `409 Conflict` — email already registered. `400 Bad Request` — validation failure.
+
+---
+
+#### `POST /api/v1/auth/login`
+
+Public. Authenticates an existing user. Sets a `refresh_token` httpOnly cookie on success.
+
+**Request body:**
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `email` | string | Yes | Valid email; normalized to lowercase |
+| `password` | string | Yes | — |
+
+**Response `200 OK`:** Same `{ accessToken }` shape as register.
+
+**Errors:** `401 Unauthorized` — wrong email or password. A constant-time dummy hash comparison prevents email enumeration via timing attacks.
+
+---
+
+#### `POST /api/v1/auth/refresh`
+
+Requires `JwtRefreshGuard` (reads the `refresh_token` cookie). Issues a new access token and rotates the refresh token. If the stored hash doesn't match, all sessions are immediately invalidated.
+
+**Request body:** None.
+
+**Response `200 OK`:** `{ accessToken }` — new access token plus a rotated `refresh_token` cookie.
+
+**Errors:** `401 Unauthorized` — missing, expired, or already-used refresh token.
+
+---
+
+#### `POST /api/v1/auth/logout`
+
+Requires `JwtAuthGuard`. Clears the `refresh_token` cookie and invalidates the refresh token in the database.
+
+**Request body:** None. **Response:** `204 No Content`.
+
+**Errors:** `401 Unauthorized` — missing or invalid access token.
+
+---
+
+### Categories Endpoints
+
+All category endpoints require `JwtAuthGuard`. Every operation is automatically scoped to the authenticated user — it is not possible to read or modify another user's categories.
+
+#### `GET /api/v1/categories`
+
+Returns all categories belonging to the current user.
+
+**Response `200 OK`:** Array of `Category` objects.
+
+---
+
+#### `POST /api/v1/categories`
+
+Creates a new category for the current user.
+
+**Request body:**
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `name` | string | Yes | Max 50 characters |
+| `icon` | string | No | Max 10 characters (e.g. an emoji) |
+
+**Response `201 Created`:** The created `Category` object.
+
+---
+
+#### `PATCH /api/v1/categories/:id`
+
+Updates an existing category. `:id` must be a valid UUID.
+
+**Request body** (all fields optional):
+
+| Field | Type | Constraints |
+|---|---|---|
+| `name` | string | Max 50 characters |
+| `icon` | string | Max 10 characters |
+
+**Response `200 OK`:** The updated `Category` object.
+
+**Errors:** `400 Bad Request` — invalid UUID. `404 Not Found` — category not found or does not belong to the user.
+
+---
+
+#### `DELETE /api/v1/categories/:id`
+
+Deletes a category. `:id` must be a valid UUID.
+
+**Response `204 No Content`.**
+
+**Errors:** `400 Bad Request` — invalid UUID. `404 Not Found` — category not found or does not belong to the user.
+
+---
+
+### Transactions Endpoints
+
+All transaction endpoints require `JwtAuthGuard`. All operations are scoped to the authenticated user.
+
+#### `GET /api/v1/transactions`
+
+Returns a paginated list of the current user's transactions, with optional filters.
+
+**Query parameters** (all optional):
+
+| Parameter | Type | Description |
+|---|---|---|
+| `month` | string | Filter by calendar month — format `YYYY-MM` (e.g. `2024-01`) |
+| `categoryId` | string (UUID) | Filter to a single category |
+| `type` | `INCOME` \| `EXPENSE` | Filter by transaction type |
+| `page` | integer >= 1 | Page number; default `1` |
+| `limit` | integer 1–100 | Results per page; default `20` |
+
+**Response `200 OK`:** Paginated array of `Transaction` objects.
+
+---
+
+#### `GET /api/v1/transactions/:id`
+
+Returns a single transaction by ID. `:id` must be a valid UUID.
+
+**Response `200 OK`:** A single `Transaction` object.
+
+**Errors:** `400 Bad Request` — invalid UUID. `404 Not Found` — transaction not found or does not belong to the user.
+
+---
+
+#### `POST /api/v1/transactions`
+
+Creates a new transaction.
+
+**Request body:**
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `amount` | number | Yes | Positive; max 2 decimal places; max `999,999,999.99` |
+| `type` | `INCOME` \| `EXPENSE` | Yes | — |
+| `date` | string | Yes | ISO 8601 date string (e.g. `"2024-06-01"`) |
+| `categoryId` | string (UUID) | Yes | Must belong to the authenticated user |
+| `description` | string | No | Max 255 characters |
+
+**Response `201 Created`:** The created `Transaction` object.
+
+---
+
+#### `PATCH /api/v1/transactions/:id`
+
+Updates an existing transaction. `:id` must be a valid UUID.
+
+**Request body** (all fields optional):
+
+| Field | Type | Constraints |
+|---|---|---|
+| `amount` | number | Positive; max 2 decimal places; max `999,999,999.99` |
+| `type` | `INCOME` \| `EXPENSE` | — |
+| `date` | string | ISO 8601 date string |
+| `categoryId` | string (UUID) | Must belong to the authenticated user |
+| `description` | string | Max 255 characters |
+
+**Response `200 OK`:** The updated `Transaction` object.
+
+**Errors:** `400 Bad Request` — invalid UUID or validation failure. `404 Not Found` — transaction not found or does not belong to the user.
+
+---
+
+#### `DELETE /api/v1/transactions/:id`
+
+Deletes a transaction. `:id` must be a valid UUID.
+
+**Response `204 No Content`.**
+
+**Errors:** `400 Bad Request` — invalid UUID. `404 Not Found` — transaction not found or does not belong to the user.
+
+---
+
+### Users Endpoints
+
+All user endpoints require `JwtAuthGuard`. There are no `:id` parameters — users can only ever operate on their own account via `/me`.
+
+#### `GET /api/v1/users/me`
+
+Returns the profile of the current user. Sensitive fields (`passwordHash`, `refreshTokenHash`) are never included in the response.
+
+**Response `200 OK`:**
+
+| Field | Type |
+|---|---|
+| `id` | string (UUID) |
+| `email` | string |
+
+---
+
+#### `PATCH /api/v1/users/me`
+
+Updates the current user's profile.
+
+**Request body** (all fields optional):
+
+| Field | Type | Constraints |
+|---|---|---|
+| `email` | string | Valid email; normalized to lowercase |
+
+**Response `200 OK`:** Updated user profile (same shape as `GET /users/me`).
+
+---
+
+#### `PATCH /api/v1/users/me/password`
+
+Changes the current user's password. As a security measure, this invalidates all active refresh tokens, forcing re-authentication on all devices.
+
+**Request body:**
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `currentPassword` | string | Yes | Must match the stored bcrypt hash |
+| `newPassword` | string | Yes | Min 8 characters |
+
+**Response `204 No Content`.**
+
+**Errors:** `401 Unauthorized` — `currentPassword` does not match.
+
+---
+
+#### `DELETE /api/v1/users/me`
+
+Permanently deletes the authenticated user's account. Cascades to all their transactions and categories at the database level.
+
+**Request body:** None. **Response:** `204 No Content`.
+
+---
+
+### Endpoint Summary
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/health` | Public | Service & database health check |
+| `POST` | `/api/v1/auth/register` | Public | Register a new account |
+| `POST` | `/api/v1/auth/login` | Public | Log in and receive tokens |
+| `POST` | `/api/v1/auth/refresh` | Cookie | Rotate refresh token, get new access token |
+| `POST` | `/api/v1/auth/logout` | Bearer | Invalidate session |
+| `GET` | `/api/v1/categories` | Bearer | List all categories |
+| `POST` | `/api/v1/categories` | Bearer | Create a category |
+| `PATCH` | `/api/v1/categories/:id` | Bearer | Update a category |
+| `DELETE` | `/api/v1/categories/:id` | Bearer | Delete a category |
+| `GET` | `/api/v1/transactions` | Bearer | List transactions (paginated, filterable) |
+| `GET` | `/api/v1/transactions/:id` | Bearer | Get a single transaction |
+| `POST` | `/api/v1/transactions` | Bearer | Create a transaction |
+| `PATCH` | `/api/v1/transactions/:id` | Bearer | Update a transaction |
+| `DELETE` | `/api/v1/transactions/:id` | Bearer | Delete a transaction |
+| `GET` | `/api/v1/users/me` | Bearer | Get current user profile |
+| `PATCH` | `/api/v1/users/me` | Bearer | Update current user profile |
+| `PATCH` | `/api/v1/users/me/password` | Bearer | Change password (invalidates all sessions) |
+| `DELETE` | `/api/v1/users/me` | Bearer | Permanently delete account (cascade) |
+
+---
 
 ## Testing
 
