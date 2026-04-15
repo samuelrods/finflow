@@ -22,6 +22,8 @@ graph TD
     Studio -->|Prisma ORM| DB
 ```
 
+> **Note:** The architecture shown represents the local development environment. In a production setting, Prisma Studio (Port 5555) is placed behind a tools profile and excluded from the deployment infrastructure entirely.
+
 ## Folder Structure
 
 ```
