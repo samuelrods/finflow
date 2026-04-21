@@ -92,10 +92,11 @@ export class AuthController {
   }
 
   private setRefreshTokenCookie(res: Response, token: string): void {
+    const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('refresh_token', token, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: REFRESH_TOKEN_TTL_MS,
       path: `/${API_PREFIX}/auth`,
     });
