@@ -8,6 +8,12 @@ import {
   Patch,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import {
   CurrentUser,
@@ -18,6 +24,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+@ApiTags('Users')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('users')
 export class UsersController {
@@ -28,6 +36,13 @@ export class UsersController {
    * Returns the authenticated user's profile.
    */
   @Get('me')
+  @ApiOperation({ summary: "Get current user's profile" })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Return user profile',
+    type: UserResponseDto,
+  })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized' })
   async getMe(@CurrentUser() user: JwtPayload): Promise<UserResponseDto> {
     return this.usersService.getMe(user.sub);
   }
@@ -37,6 +52,14 @@ export class UsersController {
    * Updates non-sensitive profile fields (currently: email).
    */
   @Patch('me')
+  @ApiOperation({ summary: "Update current user's profile" })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Profile updated successfully',
+    type: UserResponseDto,
+  })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid input' })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized' })
   async updateMe(
     @CurrentUser() user: JwtPayload,
     @Body() dto: UpdateUserDto,
@@ -51,6 +74,16 @@ export class UsersController {
    */
   @Patch('me/password')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Change user password' })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Password changed successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid current password',
+  })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized' })
   async changePassword(
     @CurrentUser() user: JwtPayload,
     @Body() dto: ChangePasswordDto,
@@ -66,6 +99,12 @@ export class UsersController {
    */
   @Delete('me')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete current user account' })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Account deleted successfully',
+  })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized' })
   async deleteMe(@CurrentUser() user: JwtPayload): Promise<void> {
     return this.usersService.deleteMe(user.sub);
   }

@@ -31,6 +31,7 @@ FinFlow is a full-stack personal finance tracker built with Next.js, NestJS, and
   - [Subsequent Deploys](#subsequent-deploys)
 - [Design Decisions](#design-decisions)
 - [API Reference](#api-reference)
+  - [Interactive Documentation (Swagger)](#interactive-documentation-swagger)
   - [Base URL & Global Config](#base-url--global-config)
   - [Authentication](#authentication)
   - [Health](#health)
@@ -146,6 +147,7 @@ finance-tracker/
 5. **Access the Application**
    - **Frontend:** [http://localhost:3000](http://localhost:3000)
    - **Backend API:** [http://localhost:3001/api/v1](http://localhost:3001/api/v1)
+   - **API Documentation (Swagger):** [http://localhost:3001/api/v1/docs](http://localhost:3001/api/v1/docs)
    - **Prisma Studio (DB Admin):** To start Prisma studio, start docker compose with the tools profile (`docker compose --profile tools up -d`) and visit [http://localhost:5555](http://localhost:5555).
 
 ### Dependency Management and State
@@ -330,6 +332,15 @@ The `migrate` service re-runs automatically on every deploy, applying any pendin
 - **Next.js App Router:** The frontend utilizes the Next.js App Router for optimized server-side rendering and streamlined layouts, paired with Tailwind CSS and accessible UI primitives for rapid component development.
 
 ## API Reference
+
+### Interactive Documentation (Swagger)
+
+The API is fully documented using Swagger (OpenAPI 3.0). You can explore, test, and interact with the endpoints directly from your browser:
+
+- **Local Development:** [http://localhost:3001/api/v1/docs](http://localhost:3001/api/v1/docs)
+- **Production:** `https://yourdomain.com/api/v1/docs`
+
+The Swagger UI provides the complete schema for all requests and responses, as well as built-in support for JWT Authentication and Cookie-based Refresh Token handling.
 
 ### Base URL & Global Config
 

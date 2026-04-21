@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import { API_PREFIX } from './common/constants';
@@ -31,6 +32,21 @@ async function bootstrap() {
   });
 
   app.setGlobalPrefix(API_PREFIX);
+
+  const config = new DocumentBuilder()
+    .setTitle('FinFlow API')
+    .setDescription('The FinFlow API description')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .addCookieAuth('refresh_token', { type: 'apiKey', in: 'cookie' }, 'refresh_token')
+    .build();
+
+  const documentFactory = () => SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup(`${API_PREFIX}/docs`, app, documentFactory, {
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  });
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port, '0.0.0.0');
