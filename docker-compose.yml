@@ -29,7 +29,13 @@ services:
       - BCRYPT_ROUNDS=12
       - JWT_SECRET
       - JWT_REFRESH_SECRET
-      - FRONTEND_URL
+      - FRONTEND_URL=https://finflow.samuelrods.com
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.finflow-api.rule=Host(`finflow.samuelrods.com`) && PathPrefix(`/api/v1`)"
+      - "traefik.http.routers.finflow-api.entrypoints=websecure"
+      - "traefik.http.routers.finflow-api.tls=true"
+      - "traefik.http.services.finflow-api.loadbalancer.server.port=3001"
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3001/api/v1/health"]
       interval: 10s
@@ -41,11 +47,18 @@ services:
       context: ./apps/web
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL
+        - NEXT_PUBLIC_API_URL=https://finflow.samuelrods.com/api/v1
     restart: unless-stopped
     environment:
-      - NEXT_PUBLIC_API_URL
+      - NEXT_PUBLIC_API_URL=https://finflow.samuelrods.com/api/v1
       - NODE_ENV=production
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.finflow-web.rule=Host(`finflow.samuelrods.com`)"
+      - "traefik.http.routers.finflow-web.entrypoints=websecure"
+      - "traefik.http.routers.finflow-web.tls=true"
+      - "traefik.http.routers.finflow-web.priority=1"
+      - "traefik.http.services.finflow-web.loadbalancer.server.port=3000"
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/"]
       interval: 10s
