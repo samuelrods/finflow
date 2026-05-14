@@ -7,6 +7,9 @@ import { API_PREFIX } from './common/constants';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Trust reverse proxy headers
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
   app.use(cookieParser());
 
   const allowedOrigins = (process.env.FRONTEND_URL ?? 'http://localhost:3000')
