@@ -8,7 +8,7 @@ RUN npm ci
 
 COPY . .
 
-RUN npx prisma generate --schema=prisma/schema.prisma
+RUN DATABASE_URL=postgresql://unused:unused@localhost:5432/unused npx prisma generate --schema=prisma/schema.prisma
 RUN npm run build
 
 
