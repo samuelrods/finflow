@@ -8,7 +8,7 @@ RUN npm ci
 
 COPY . .
 
-RUN DATABASE_URL=postgresql://unused:unused@localhost:5432/unused npx prisma generate --schema=prisma/schema.prisma
+RUN npx prisma generate --schema=prisma/schema.prisma
 RUN npm run build
 
 
@@ -20,12 +20,13 @@ ENV NODE_ENV=production
 WORKDIR /app
 
 COPY package*.json ./
-# Install production dependencies and prisma for migrations
-RUN npm ci --omit=dev && npm install prisma
+# Install production dependencies, prisma, and tsx for migrations
+RUN npm ci --omit=dev && npm install prisma tsx
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/src/generated ./src/generated
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 
 EXPOSE 3001
 
