@@ -35,7 +35,11 @@ async function bootstrap() {
     credentials: true,
   });
 
-  app.setGlobalPrefix(API_PREFIX);
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  if (!isProduction) {
+    app.setGlobalPrefix(API_PREFIX);
+  }
 
   const config = new DocumentBuilder()
     .setTitle('FinFlow API')
@@ -50,7 +54,8 @@ async function bootstrap() {
     .build();
 
   const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup(`${API_PREFIX}/docs`, app, documentFactory, {
+  const swaggerPath = isProduction ? 'docs' : `${API_PREFIX}/docs`;
+  SwaggerModule.setup(swaggerPath, app, documentFactory, {
     swaggerOptions: {
       persistAuthorization: true,
     },
