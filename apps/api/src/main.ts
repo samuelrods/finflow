@@ -36,7 +36,7 @@ async function bootstrap() {
   });
 
   const isProduction = process.env.NODE_ENV === 'production';
-  
+
   if (!isProduction) {
     app.setGlobalPrefix(API_PREFIX);
   }

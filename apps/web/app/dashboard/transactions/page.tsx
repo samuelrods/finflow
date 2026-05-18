@@ -105,7 +105,7 @@ function TransactionsPageContent() {
   const netBalance = totalIncome - totalExpenses;
 
   return (
-    <div className="p-6 max-w-3xl mx-auto space-y-6">
+    <div className="px-4 py-6 md:px-8 md:py-10 max-w-3xl mx-auto space-y-6">
       <div className="flex items-center gap-1">
         <Link
           href="/dashboard"
