@@ -46,7 +46,10 @@ export class TransactionsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get a single transaction' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Return the transaction' })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Transaction not found' })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Transaction not found',
+  })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized' })
   getOne(
     @Param('id', ParseUUIDPipe) id: string,
@@ -74,7 +77,10 @@ export class TransactionsController {
     status: HttpStatus.OK,
     description: 'Transaction updated successfully',
   })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Transaction not found' })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Transaction not found',
+  })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -91,7 +97,10 @@ export class TransactionsController {
     status: HttpStatus.NO_CONTENT,
     description: 'Transaction deleted successfully',
   })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Transaction not found' })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Transaction not found',
+  })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized' })
   delete(
     @Param('id', ParseUUIDPipe) id: string,

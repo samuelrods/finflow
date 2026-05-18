@@ -50,6 +50,11 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4 pb-4">
+            <div className="rounded-md bg-blue-50 px-4 py-3 text-sm text-blue-800 border border-blue-200">
+              <p className="font-semibold mb-1">Demo Environment</p>
+              <p>This is a portfolio demo. Feel free to register a new account, or head over to the <Link href="/auth/login" className="underline font-medium">login page</Link> to use the pre-configured seeded accounts.</p>
+            </div>
+
             {register_.error && (
               <div className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">
                 {register_.error.message}

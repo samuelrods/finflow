@@ -1,11 +1,15 @@
 import { NestFactory } from '@nestjs/core';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import { API_PREFIX } from './common/constants';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Trust reverse proxy headers
+  app.set('trust proxy', 1);
 
   app.use(cookieParser());
 
@@ -31,18 +35,27 @@ async function bootstrap() {
     credentials: true,
   });
 
-  app.setGlobalPrefix(API_PREFIX);
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  if (!isProduction) {
+    app.setGlobalPrefix(API_PREFIX);
+  }
 
   const config = new DocumentBuilder()
     .setTitle('FinFlow API')
     .setDescription('The FinFlow API description')
     .setVersion('1.0')
     .addBearerAuth()
-    .addCookieAuth('refresh_token', { type: 'apiKey', in: 'cookie' }, 'refresh_token')
+    .addCookieAuth(
+      'refresh_token',
+      { type: 'apiKey', in: 'cookie' },
+      'refresh_token',
+    )
     .build();
 
   const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup(`${API_PREFIX}/docs`, app, documentFactory, {
+  const swaggerPath = isProduction ? 'docs' : `${API_PREFIX}/docs`;
+  SwaggerModule.setup(swaggerPath, app, documentFactory, {
     swaggerOptions: {
       persistAuthorization: true,
     },

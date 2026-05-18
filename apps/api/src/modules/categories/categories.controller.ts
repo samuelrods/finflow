@@ -60,7 +60,10 @@ export class CategoriesController {
     status: HttpStatus.OK,
     description: 'Category updated successfully',
   })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Category not found' })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Category not found',
+  })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -77,7 +80,10 @@ export class CategoriesController {
     status: HttpStatus.NO_CONTENT,
     description: 'Category deleted successfully',
   })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Category not found' })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Category not found',
+  })
   @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized' })
   delete(
     @Param('id', ParseUUIDPipe) id: string,

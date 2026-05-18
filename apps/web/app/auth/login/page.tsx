@@ -43,6 +43,15 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4 pb-4">
+            <div className="rounded-md bg-blue-50 px-4 py-3 text-sm text-blue-800 border border-blue-200">
+              <p className="font-semibold mb-1">Demo Environment</p>
+              <p>You can log in using the seeded test accounts:</p>
+              <ul className="list-disc pl-5 mt-1 space-y-1">
+                <li><strong>admin@example.com</strong> (Password: password123)</li>
+                <li><strong>user@example.com</strong> (Password: password123)</li>
+              </ul>
+            </div>
+
             {/* API-level error (wrong credentials, server down, etc.) */}
             {login.error && (
               <div className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">
