@@ -108,7 +108,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <main className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="px-4 py-6 md:px-8 md:py-10 max-w-5xl mx-auto space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
@@ -295,6 +295,6 @@ export default function DashboardPage() {
         open={isAddTransactionOpen}
         onOpenChange={setIsAddTransactionOpen}
       />
-    </main>
+    </div>
   );
 }
