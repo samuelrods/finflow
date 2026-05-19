@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Category } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { CategoryIcon } from "@/components/ui/category-icon";
 import {
   Dialog,
   DialogContent,
@@ -99,7 +101,7 @@ export function CategoryList({
     return (
       <div className="space-y-2">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-14 rounded-lg bg-muted animate-pulse" />
+          <div key={i} className="h-14 rounded-none bg-muted animate-pulse" />
         ))}
       </div>
     );
@@ -107,10 +109,10 @@ export function CategoryList({
 
   if (categories.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <p className="text-muted-foreground text-sm">No custom categories yet.</p>
+      <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed rounded-none">
+        <p className="text-muted-foreground text-sm">No categories yet.</p>
         <p className="text-muted-foreground text-xs mt-1">
-          Add your first category using the button above.
+          Create your first category using the button above.
         </p>
       </div>
     );
@@ -118,15 +120,15 @@ export function CategoryList({
 
   return (
     <>
-      <div className="rounded-xl border divide-y overflow-hidden">
+      <Card className="divide-y overflow-hidden py-0">
         {categories.map((cat) => (
           <div
             key={cat.id}
             className="flex items-center gap-3 px-4 py-3 bg-background hover:bg-muted/50 transition-colors"
           >
-            <span className="text-xl w-8 text-center shrink-0">
-              {cat.icon ?? "📁"}
-            </span>
+            <div className="flex items-center justify-center size-9 rounded-none border bg-muted shrink-0">
+              <CategoryIcon name={cat.icon} className="size-5 text-muted-foreground" />
+            </div>
             <span className="text-sm font-medium flex-1 truncate">
               {cat.name}
             </span>
@@ -141,7 +143,7 @@ export function CategoryList({
             </Button>
           </div>
         ))}
-      </div>
+      </Card>
 
       {deletingCategory && (
         <DeleteConfirmDialog

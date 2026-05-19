@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { CategoryIcon } from "@/components/ui/category-icon";
 import { CategoryList } from "@/components/categories/category-list";
 import { CategoryForm } from "@/components/categories/category-form";
 import { useCategories } from "@/hooks/use-categories";
-import { ArrowLeft, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 
 export default function CategoriesPage() {
@@ -16,17 +18,7 @@ export default function CategoriesPage() {
   const defaultCategories = categories.filter((c) => c.userId === null);
 
   return (
-    <div className="px-4 py-6 md:px-8 md:py-10 max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center gap-1">
-        <Link
-          href="/dashboard/transactions"
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="size-4" />
-          Transactions
-        </Link>
-      </div>
-
+    <div className="px-4 py-6 md:px-8 md:py-10 w-full space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Categories</h2>
         <Button onClick={() => setFormOpen(true)}>
@@ -55,15 +47,15 @@ export default function CategoriesPage() {
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
             Default Categories
           </h3>
-          <div className="rounded-xl border divide-y overflow-hidden">
+          <Card className="divide-y overflow-hidden py-0">
             {defaultCategories.map((cat) => (
               <div
                 key={cat.id}
                 className="flex items-center gap-3 px-4 py-3 bg-background"
               >
-                <span className="text-xl w-8 text-center shrink-0">
-                  {cat.icon ?? "📁"}
-                </span>
+                <div className="flex items-center justify-center size-9 rounded-none border bg-muted shrink-0">
+                  <CategoryIcon name={cat.icon} className="size-5 text-muted-foreground" />
+                </div>
                 <span className="text-sm font-medium flex-1 truncate">
                   {cat.name}
                 </span>
@@ -72,7 +64,7 @@ export default function CategoriesPage() {
                 </span>
               </div>
             ))}
-          </div>
+          </Card>
         </div>
       )}
 

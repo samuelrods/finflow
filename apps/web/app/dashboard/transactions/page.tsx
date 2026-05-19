@@ -10,12 +10,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { TransactionList } from "@/components/transactions/transaction-list";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { TransactionDataTable } from "@/components/transactions/transaction-data-table";
 import { TransactionForm } from "@/components/transactions/transaction-form";
+import { CategoryIcon } from "@/components/ui/category-icon";
 import { useTransactions } from "@/hooks/use-transactions";
 import { useCategories } from "@/hooks/use-categories";
 import { TransactionFilters } from "@/lib/types";
-import { ArrowLeft, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ChevronLeft, ChevronRight, Plus, ArrowUpCircle, ArrowDownCircle, Wallet } from "lucide-react";
 import Link from "next/link";
 
 function getMonthLabel(month: string): string {
@@ -105,16 +113,7 @@ function TransactionsPageContent() {
   const netBalance = totalIncome - totalExpenses;
 
   return (
-    <div className="px-4 py-6 md:px-8 md:py-10 max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center gap-1">
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="size-4" />
-          Dashboard
-        </Link>
-      </div>
+    <div className="px-4 py-6 md:px-8 md:py-10 w-full space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1 sm:gap-2">
@@ -170,66 +169,92 @@ function TransactionsPageContent() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <div className="rounded-xl border bg-background p-4">
-          <p className="text-xs text-muted-foreground">Income</p>
-          <p className="text-lg font-bold text-emerald-600 mt-1 truncate">
-            {formatCurrency(totalIncome)}
-          </p>
-        </div>
-        <div className="rounded-xl border bg-background p-4">
-          <p className="text-xs text-muted-foreground">Expenses</p>
-          <p className="text-lg font-bold text-red-600 mt-1 truncate">
-            {formatCurrency(totalExpenses)}
-          </p>
-        </div>
-        <div className="rounded-xl border bg-background p-4 col-span-2 sm:col-span-1">
-          <p className="text-xs text-muted-foreground">Balance</p>
-          <p
-            className={`text-lg font-bold mt-1 truncate ${netBalance >= 0 ? "text-emerald-600" : "text-red-600"}`}
+        <Card size="sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+            <CardTitle className="text-xs font-medium text-muted-foreground">Income</CardTitle>
+            <ArrowUpCircle className="h-3.5 w-3.5 text-income" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg font-bold truncate text-income">
+              {formatCurrency(totalIncome)}
+            </div>
+          </CardContent>
+        </Card>
+        <Card size="sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+            <CardTitle className="text-xs font-medium text-muted-foreground">Expenses</CardTitle>
+            <ArrowDownCircle className="h-3.5 w-3.5 text-destructive" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg font-bold truncate text-destructive">
+              {formatCurrency(totalExpenses)}
+            </div>
+          </CardContent>
+        </Card>
+        <Card size="sm" className="col-span-2 sm:col-span-1">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+            <CardTitle className="text-xs font-medium text-muted-foreground">Balance</CardTitle>
+            <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div
+              className={cn(
+                "text-lg font-bold truncate",
+                netBalance < 0 && "text-destructive"
+              )}
+            >
+              {formatCurrency(netBalance)}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <div className="p-4 border-b flex flex-col sm:flex-row gap-3">
+          <Select
+            value={categoryId || "all"}
+            onValueChange={handleCategoryChange}
           >
-            {formatCurrency(netBalance)}
-          </p>
+            <SelectTrigger className="w-full sm:w-44 h-9">
+              <SelectValue placeholder="All categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All categories</SelectItem>
+              {categories.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  <div className="flex items-center gap-2">
+                    <CategoryIcon name={c.icon} className="size-4 text-muted-foreground" />
+                    <span>{c.name}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={type || "all"} onValueChange={handleTypeChange}>
+            <SelectTrigger className="w-full sm:w-36 h-9">
+              <SelectValue placeholder="All types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All types</SelectItem>
+              <SelectItem value="INCOME">Income</SelectItem>
+              <SelectItem value="EXPENSE">Expense</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      </div>
 
-      <div className="flex flex-col sm:flex-row gap-2">
-        <Select
-          value={categoryId || "all"}
-          onValueChange={handleCategoryChange}
-        >
-          <SelectTrigger className="w-full sm:w-44">
-            <SelectValue placeholder="All categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All categories</SelectItem>
-            {categories.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.icon ? `${c.icon} ` : ""}
-                {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {error && (
+          <div className="p-6 border-b">
+            <p className="text-sm text-destructive">
+              Failed to load transactions: {error.message}
+            </p>
+          </div>
+        )}
 
-        <Select value={type || "all"} onValueChange={handleTypeChange}>
-          <SelectTrigger className="w-full sm:w-36">
-            <SelectValue placeholder="All types" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All types</SelectItem>
-            <SelectItem value="INCOME">Income</SelectItem>
-            <SelectItem value="EXPENSE">Expense</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {error && (
-        <p className="text-sm text-destructive">
-          Failed to load transactions: {error.message}
-        </p>
-      )}
-
-      <TransactionList transactions={transactions} isLoading={isLoading} />
+        <CardContent className="p-0">
+          <TransactionDataTable transactions={transactions} isLoading={isLoading} />
+        </CardContent>
+      </Card>
 
       {!isLoading && data && (
         <div className="flex items-center justify-between">

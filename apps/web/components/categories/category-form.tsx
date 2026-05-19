@@ -13,6 +13,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useCreateCategory } from "@/hooks/use-categories";
+import { CategoryIcon } from "@/components/ui/category-icon";
 
 interface CategoryFormProps {
   open: boolean;
@@ -24,9 +25,9 @@ interface FormValues {
 }
 
 const SUGGESTED_ICONS = [
-  "🏠", "🚗", "🛒", "🍔", "☕", "✈️", "🎮", "📚",
-  "💊", "👗", "💰", "🎁", "🏋️", "🎵", "🐾", "💡",
-  "🔧", "📱", "🏥", "🌿", "🎓", "💼", "🌊", "🎨",
+  "Home", "Car", "ShoppingCart", "Utensils", "Coffee", "Plane", "Gamepad2", "BookText",
+  "Pill", "Shirt", "Banknote", "Gift", "Dumbbell", "Music", "PawPrint", "Lightbulb",
+  "Wrench", "Smartphone", "Hospital", "Leaf", "GraduationCap", "Briefcase", "Waves", "Palette",
 ];
 
 export function CategoryForm({ open, onOpenChange }: CategoryFormProps) {
@@ -70,8 +71,8 @@ export function CategoryForm({ open, onOpenChange }: CategoryFormProps) {
           <div className="space-y-2">
             <Label>Icon</Label>
             <div className="flex items-center gap-2 mb-2">
-              <div className="flex items-center justify-center size-10 rounded-lg border bg-muted text-xl shrink-0">
-                {selectedIcon || "?"}
+              <div className="flex items-center justify-center size-10 rounded-none border bg-muted text-muted-foreground shrink-0">
+                <CategoryIcon name={selectedIcon} className="size-5" fallback="?" />
               </div>
               <span className="text-sm text-muted-foreground">
                 {selectedIcon ? "Selected" : "Pick an icon below or leave blank"}
@@ -87,21 +88,21 @@ export function CategoryForm({ open, onOpenChange }: CategoryFormProps) {
               )}
             </div>
             <div className="grid grid-cols-8 gap-1.5">
-              {SUGGESTED_ICONS.map((emoji) => (
+              {SUGGESTED_ICONS.map((iconName) => (
                 <button
-                  key={emoji}
+                  key={iconName}
                   type="button"
                   onClick={() =>
-                    setSelectedIcon(selectedIcon === emoji ? "" : emoji)
+                    setSelectedIcon(selectedIcon === iconName ? "" : iconName)
                   }
-                  className={`flex items-center justify-center rounded-lg h-9 text-lg transition-all border ${
-                    selectedIcon === emoji
+                  className={`flex items-center justify-center rounded-none h-9 transition-all border ${
+                    selectedIcon === iconName
                       ? "border-primary bg-primary/10 ring-2 ring-primary/30"
                       : "border-transparent hover:border-border hover:bg-muted"
                   }`}
-                  title={emoji}
+                  title={iconName}
                 >
-                  {emoji}
+                  <CategoryIcon name={iconName} className="size-5 text-muted-foreground" />
                 </button>
               ))}
             </div>
