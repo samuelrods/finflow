@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -32,19 +33,6 @@ import {
 import { Pie, PieChart, Cell } from "recharts";
 import { TransactionList } from "@/components/transactions/transaction-list";
 import { TransactionForm } from "@/components/transactions/transaction-form";
-
-const CHART_COLORS = [
-  "#0ea5e9", // sky-500
-  "#10b981", // emerald-500
-  "#f59e0b", // amber-500
-  "#ef4444", // red-500
-  "#8b5cf6", // violet-500
-  "#ec4899", // pink-500
-  "#f97316", // orange-500
-  "#14b8a6", // teal-500
-  "#6366f1", // indigo-500
-  "#84cc16", // lime-500
-];
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -78,11 +66,7 @@ export default function DashboardPage() {
           total: ct.total,
         };
       })
-      .sort((a, b) => b.total - a.total)
-      .map((item, index) => ({
-        ...item,
-        fill: CHART_COLORS[index % CHART_COLORS.length],
-      }));
+      .sort((a, b) => b.total - a.total);
   }, [categoryTotals, categoriesData]);
 
   // Dynamically generate chart config to support our dynamic categories
@@ -90,10 +74,10 @@ export default function DashboardPage() {
     const config: Record<string, { label: string; color?: string }> = {
       total: { label: "Total Spent" },
     };
-    chartData.forEach((item) => {
+    chartData.forEach((item, index) => {
       config[item.category] = {
         label: item.category,
-        color: item.fill,
+        color: `var(--chart-${(index % 5) + 1})`,
       };
     });
     return config;
@@ -108,7 +92,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="px-4 py-6 md:px-8 md:py-10 max-w-5xl mx-auto space-y-6">
+    <div className="px-4 py-6 md:px-8 md:py-10 w-full space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
@@ -146,13 +130,13 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-            <ArrowUpCircle className="h-4 w-4 text-muted-foreground" />
+            <ArrowUpCircle className="h-4 w-4 text-income" />
           </CardHeader>
           <CardContent>
             {isLoadingTransactions ? (
               <Skeleton className="h-8 w-28" />
             ) : (
-              <div className="text-2xl font-bold text-emerald-600">
+              <div className="text-2xl font-bold text-income">
                 ${incomeTotal.toFixed(2)}
               </div>
             )}
@@ -163,13 +147,13 @@ export default function DashboardPage() {
             <CardTitle className="text-sm font-medium">
               Total Expenses
             </CardTitle>
-            <ArrowDownCircle className="h-4 w-4 text-muted-foreground" />
+            <ArrowDownCircle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
             {isLoadingTransactions ? (
               <Skeleton className="h-8 w-28" />
             ) : (
-              <div className="text-2xl font-bold text-rose-600">
+              <div className="text-2xl font-bold text-destructive">
                 ${expenseTotal.toFixed(2)}
               </div>
             )}
@@ -185,7 +169,10 @@ export default function DashboardPage() {
               <Skeleton className="h-8 w-28" />
             ) : (
               <div
-                className={`text-2xl font-bold ${netBalance >= 0 ? "text-emerald-600" : "text-rose-600"}`}
+                className={cn(
+                  "text-2xl font-bold",
+                  netBalance < 0 && "text-destructive"
+                )}
               >
                 ${netBalance.toFixed(2)}
               </div>
@@ -222,17 +209,17 @@ export default function DashboardPage() {
                     paddingAngle={2}
                   >
                     {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                      <Cell key={`cell-${index}`} fill={`var(--chart-${(index % 5) + 1})`} />
                     ))}
                   </Pie>
                 </PieChart>
               </ChartContainer>
             ) : isLoadingTransactions || isLoadingCategories ? (
               <div className="flex h-[300px] items-center justify-center">
-                <Skeleton className="h-[160px] w-[160px] rounded-full" />
+                <Skeleton className="h-[160px] w-[160px] rounded-none" />
               </div>
             ) : (
-              <div className="flex flex-col h-[300px] items-center justify-center text-center text-muted-foreground border border-dashed rounded-md space-y-3">
+              <div className="flex flex-col h-[300px] items-center justify-center text-center text-muted-foreground border border-dashed rounded-none space-y-3">
                 <p>No transactions found for this month.</p>
                 <Button
                   variant="outline"
@@ -283,7 +270,7 @@ export default function DashboardPage() {
             Your most recent activity for {monthStr}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <TransactionList
             transactions={transactionsData?.data?.slice(0, 5) || []}
             isLoading={isLoadingTransactions}

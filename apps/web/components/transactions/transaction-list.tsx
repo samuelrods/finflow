@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { Transaction } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { CategoryIcon } from "@/components/ui/category-icon";
 import { TransactionForm } from "./transaction-form";
 import {
   Dialog,
@@ -94,7 +97,7 @@ export function TransactionList({
     return (
       <div className="space-y-2">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-14 rounded-lg bg-muted animate-pulse" />
+          <div key={i} className="h-14 rounded-none bg-muted animate-pulse" />
         ))}
       </div>
     );
@@ -113,16 +116,16 @@ export function TransactionList({
 
   return (
     <>
-      <div className="rounded-xl border divide-y overflow-hidden">
+      <div className="divide-y">
         {transactions.map((t) => (
           <div
             key={t.id}
             className="flex flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-2 px-4 py-3 bg-background hover:bg-muted/50 transition-colors"
           >
             <div className="flex items-center gap-3 flex-1 min-w-0 w-full sm:w-auto">
-              <span className="text-xl w-8 text-center shrink-0">
-                {t.category.icon ?? "💳"}
-              </span>
+              <div className="flex items-center justify-center size-9 rounded-none border bg-muted shrink-0">
+                <CategoryIcon name={t.category.icon} className="size-5 text-muted-foreground" />
+              </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium truncate">
@@ -146,7 +149,10 @@ export function TransactionList({
             </div>
             <div className="flex items-center justify-between w-full sm:w-auto pl-11 sm:pl-0 shrink-0">
               <span
-                className={`text-sm font-semibold tabular-nums shrink-0 ${t.type === "INCOME" ? "text-emerald-600" : "text-red-600"}`}
+                className={cn(
+                  "text-sm font-semibold tabular-nums shrink-0",
+                  t.type === "EXPENSE" ? "text-destructive" : "text-income"
+                )}
               >
                 {formatAmount(t.amount, t.type)}
               </span>

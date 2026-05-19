@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCategories } from "@/hooks/use-categories";
+import { CategoryIcon } from "@/components/ui/category-icon";
 import {
   useCreateTransaction,
   useUpdateTransaction,
@@ -124,7 +125,7 @@ export function TransactionForm({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-2">
-          <div className="flex rounded-lg border border-input overflow-hidden">
+          <div className="flex rounded-none border border-input overflow-hidden">
             {(["EXPENSE", "INCOME"] as const).map((t) => (
               <button
                 key={t}
@@ -132,8 +133,8 @@ export function TransactionForm({
                 onClick={() => setValue("type", t)}
                 className={`flex-1 py-1.5 text-sm font-medium transition-colors ${type === t
                     ? t === "INCOME"
-                      ? "bg-emerald-600 text-white"
-                      : "bg-red-600 text-white"
+                      ? "bg-income text-white"
+                      : "bg-destructive text-white"
                     : "bg-background text-muted-foreground hover:bg-muted"
                   }`}
               >
@@ -175,8 +176,10 @@ export function TransactionForm({
               <SelectContent>
                 {categories.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
-                    {c.icon ? `${c.icon} ` : ""}
-                    {c.name}
+                    <div className="flex items-center gap-2">
+                      <CategoryIcon name={c.icon} className="size-4 text-muted-foreground" />
+                      <span>{c.name}</span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>

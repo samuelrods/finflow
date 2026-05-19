@@ -13,10 +13,15 @@ import {
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const navigation = [
   { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Transactions", href: "/dashboard/transactions", icon: ArrowLeftRight },
+  {
+    name: "Transactions",
+    href: "/dashboard/transactions",
+    icon: ArrowLeftRight,
+  },
   { name: "Categories", href: "/dashboard/categories", icon: Tags },
 ];
 
@@ -26,10 +31,14 @@ export function DashboardSidebar({ className }: { className?: string }) {
   const pathname = usePathname();
 
   return (
-    <aside className={cn("flex h-full w-64 flex-col border-r bg-white", className)}>
-      <div className="flex h-16 items-center gap-2 border-b px-6">
-        <TrendingUp className="size-6 text-primary" />
-        <span className="text-xl font-bold tracking-tight">FinFlow</span>
+    <aside
+      className={cn("flex h-full w-64 flex-col border-r bg-card", className)}
+    >
+      <div className="flex h-16 items-center justify-between border-b px-6">
+        <div className="flex items-center gap-2">
+          <span className="text-xl font-bold tracking-tight">FinFlow</span>
+        </div>
+        <ThemeToggle />
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-6">
@@ -40,10 +49,10 @@ export function DashboardSidebar({ className }: { className?: string }) {
               key={item.name}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-none px-3 py-2 text-sm font-medium transition-colors",
                 isActive
                   ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
               <item.icon className="size-4" />
