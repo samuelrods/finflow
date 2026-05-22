@@ -17,6 +17,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 const navigation = [
   { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Analytics", href: "/dashboard/analytics", icon: TrendingUp },
   {
     name: "Transactions",
     href: "/dashboard/transactions",

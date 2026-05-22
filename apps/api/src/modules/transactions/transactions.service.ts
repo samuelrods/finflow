@@ -10,6 +10,7 @@ import {
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { QueryTransactionDto } from './dto/query-transaction.dto';
+import { QueryAnalyticsDto } from './dto/query-analytics.dto';
 import { Prisma } from '../../generated/prisma/browser';
 import { CategoriesService } from '../categories/categories.service';
 
@@ -138,6 +139,236 @@ export class TransactionsService {
   async delete(id: string, userId: string): Promise<void> {
     await this.getOne(id, userId);
     await this.transactionsRepository.delete(id);
+  }
+
+  /**
+   * Retrieves aggregated transaction analytics including trends, categories, and monthly insights.
+   * @example
+   * const analytics = await service.getAnalytics('user-123', { month: '2026-05' });
+   */
+  async getAnalytics(userId: string, query: QueryAnalyticsDto) {
+    const monthStr = query.month ?? this.getCurrentMonthString();
+    const [year, m] = monthStr.split('-').map(Number);
+    const targetStart = new Date(Date.UTC(year, m - 1, 1));
+    const targetEnd = new Date(Date.UTC(year, m, 1));
+    const prevStart = new Date(Date.UTC(year, m - 2, 1));
+    const prevEnd = new Date(Date.UTC(year, m - 1, 1));
+    const historyStart = new Date(Date.UTC(year, m - 6, 1));
+    const txs = await this.transactionsRepository.findAllForUser(userId, {
+      date: { gte: historyStart, lt: targetEnd },
+    });
+    const targetTx = txs.filter(
+      (t) => t.date >= targetStart && t.date < targetEnd,
+    );
+    const prevTx = txs.filter((t) => t.date >= prevStart && t.date < prevEnd);
+    return {
+      trends: this.calculateDailyTrends(targetStart, targetEnd, targetTx),
+      categories: this.calculateCategoryBreakdown(targetTx),
+      history: this.calculateMonthlyHistory(historyStart, targetEnd, txs),
+      insights: this.calculateInsights(targetTx, prevTx, monthStr),
+    };
+  }
+
+  private getCurrentMonthString(): string {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  private initializeDaysMap(start: Date, end: Date) {
+    const daysMap = new Map<string, { income: number; expense: number }>();
+    const curr = new Date(start);
+    while (curr < end) {
+      daysMap.set(curr.toISOString().split('T')[0], { income: 0, expense: 0 });
+      curr.setUTCDate(curr.getUTCDate() + 1);
+    }
+    return daysMap;
+  }
+
+  private calculateDailyTrends(
+    start: Date,
+    end: Date,
+    txs: TransactionWithCategory[],
+  ) {
+    const daysMap = this.initializeDaysMap(start, end);
+    for (const tx of txs) {
+      const key = new Date(tx.date).toISOString().split('T')[0];
+      const day = daysMap.get(key);
+      if (!day) {
+        continue;
+      }
+      const amt = Number(tx.amount);
+      if (tx.type === 'INCOME') {
+        day.income += amt;
+      } else {
+        day.expense += amt;
+      }
+    }
+    return Array.from(daysMap.entries()).map(([date, vals]) => ({
+      date,
+      income: Number(vals.income.toFixed(2)),
+      expense: Number(vals.expense.toFixed(2)),
+    }));
+  }
+
+  private calculateCategoryBreakdown(txs: TransactionWithCategory[]) {
+    const expenses = txs.filter((t) => t.type === 'EXPENSE');
+    const total = expenses.reduce((sum, t) => sum + Number(t.amount), 0);
+    const catMap = new Map<
+      string,
+      { name: string; icon: string | null; total: number }
+    >();
+    for (const tx of expenses) {
+      const existing = catMap.get(tx.categoryId) ?? {
+        name: tx.category.name,
+        icon: tx.category.icon,
+        total: 0,
+      };
+      existing.total += Number(tx.amount);
+      catMap.set(tx.categoryId, existing);
+    }
+    return Array.from(catMap.entries())
+      .map(([id, info]) => ({
+        categoryId: id,
+        categoryName: info.name,
+        categoryIcon: info.icon,
+        total: Number(info.total.toFixed(2)),
+        percentage:
+          total > 0 ? Number(((info.total / total) * 100).toFixed(1)) : 0,
+      }))
+      .sort((a, b) => b.total - a.total);
+  }
+
+  private initializeMonthsMap(start: Date, end: Date) {
+    const monthsMap = new Map<string, { income: number; expense: number }>();
+    const curr = new Date(start);
+    while (curr < end) {
+      const key = `${curr.getUTCFullYear()}-${String(curr.getUTCMonth() + 1).padStart(2, '0')}`;
+      monthsMap.set(key, { income: 0, expense: 0 });
+      curr.setUTCMonth(curr.getUTCMonth() + 1);
+    }
+    return monthsMap;
+  }
+
+  private calculateMonthlyHistory(
+    start: Date,
+    end: Date,
+    txs: TransactionWithCategory[],
+  ) {
+    const monthsMap = this.initializeMonthsMap(start, end);
+    for (const tx of txs) {
+      const date = new Date(tx.date);
+      const key = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+      const val = monthsMap.get(key);
+      if (!val) {
+        continue;
+      }
+      const amt = Number(tx.amount);
+      if (tx.type === 'INCOME') {
+        val.income += amt;
+      } else {
+        val.expense += amt;
+      }
+    }
+    return Array.from(monthsMap.entries()).map(([month, vals]) => ({
+      month,
+      income: Number(vals.income.toFixed(2)),
+      expense: Number(vals.expense.toFixed(2)),
+      savingsRate:
+        vals.income > 0
+          ? Number(
+              (((vals.income - vals.expense) / vals.income) * 100).toFixed(1),
+            )
+          : 0,
+    }));
+  }
+
+  private sumByType(
+    txs: TransactionWithCategory[],
+    type: 'INCOME' | 'EXPENSE',
+  ): number {
+    return txs
+      .filter((t) => t.type === type)
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+  }
+
+  private calculateSavingsRate(txs: TransactionWithCategory[]): number {
+    const income = this.sumByType(txs, 'INCOME');
+    const expense = this.sumByType(txs, 'EXPENSE');
+    return income > 0 ? ((income - expense) / income) * 100 : 0;
+  }
+
+  private sumMtdExpenses(
+    txs: TransactionWithCategory[],
+    endDay: number,
+  ): number {
+    return txs
+      .filter(
+        (t) => t.type === 'EXPENSE' && new Date(t.date).getUTCDate() <= endDay,
+      )
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+  }
+
+  private getTopCategoryInsight(txs: TransactionWithCategory[]) {
+    const breakdown = this.calculateCategoryBreakdown(txs);
+    return breakdown.length > 0
+      ? {
+          name: breakdown[0].categoryName,
+          total: breakdown[0].total,
+          percentage: breakdown[0].percentage,
+        }
+      : null;
+  }
+
+  private getLargeTransactions(txs: TransactionWithCategory[]) {
+    return txs
+      .filter((t) => t.type === 'EXPENSE' && Number(t.amount) >= 100)
+      .map((t) => ({
+        id: t.id,
+        amount: Number(t.amount),
+        description: t.description,
+        date: new Date(t.date).toISOString().split('T')[0],
+        categoryName: t.category.name,
+      }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 5);
+  }
+
+  private calculateInsights(
+    targetTx: TransactionWithCategory[],
+    prevTx: TransactionWithCategory[],
+    monthStr: string,
+  ) {
+    const currentRate = this.calculateSavingsRate(targetTx);
+    const prevRate = this.calculateSavingsRate(prevTx);
+    const status =
+      currentRate >= 20
+        ? ('good' as const)
+        : currentRate >= 5
+          ? ('average' as const)
+          : ('poor' as const);
+    const isCurrentMonth = monthStr === this.getCurrentMonthString();
+    const endDay = isCurrentMonth ? new Date().getUTCDate() : 31;
+    const currentMtd = this.sumMtdExpenses(targetTx, endDay);
+    const previousMtd = this.sumMtdExpenses(prevTx, endDay);
+    const percentageChange =
+      previousMtd > 0
+        ? Number((((currentMtd - previousMtd) / previousMtd) * 100).toFixed(1))
+        : 0;
+    return {
+      savingsRate: {
+        current: Number(currentRate.toFixed(1)),
+        change: Number((currentRate - prevRate).toFixed(1)),
+        status,
+      },
+      topCategory: this.getTopCategoryInsight(targetTx),
+      spendingVelocity: {
+        currentMtd: Number(currentMtd.toFixed(2)),
+        previousMtd: Number(previousMtd.toFixed(2)),
+        percentageChange,
+        isFaster: currentMtd > previousMtd,
+      },
+      largeTransactions: this.getLargeTransactions(targetTx),
+    };
   }
 
   private buildWhereClause(

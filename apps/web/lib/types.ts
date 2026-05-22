@@ -34,3 +34,57 @@ export interface TransactionFilters {
   type?: TransactionType;
   page?: number;
 }
+
+export interface AnalyticsTrend {
+  date: string;
+  income: number;
+  expense: number;
+}
+
+export interface AnalyticsCategory {
+  categoryId: string;
+  categoryName: string;
+  categoryIcon: string | null;
+  total: number;
+  percentage: number;
+}
+
+export interface AnalyticsHistory {
+  month: string;
+  income: number;
+  expense: number;
+  savingsRate: number;
+}
+
+export interface AnalyticsInsights {
+  savingsRate: {
+    current: number;
+    change: number;
+    status: "good" | "average" | "poor";
+  };
+  topCategory: {
+    name: string;
+    total: number;
+    percentage: number;
+  } | null;
+  spendingVelocity: {
+    currentMtd: number;
+    previousMtd: number;
+    percentageChange: number;
+    isFaster: boolean;
+  };
+  largeTransactions: {
+    id: string;
+    amount: number;
+    description: string | null;
+    date: string;
+    categoryName: string;
+  }[];
+}
+
+export interface AnalyticsResponse {
+  trends: AnalyticsTrend[];
+  categories: AnalyticsCategory[];
+  history: AnalyticsHistory[];
+  insights: AnalyticsInsights;
+}

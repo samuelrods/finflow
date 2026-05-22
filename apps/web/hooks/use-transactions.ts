@@ -5,6 +5,7 @@ import {
   Transaction,
   TransactionFilters,
   TransactionListResponse,
+  AnalyticsResponse,
 } from "@/lib/types";
 
 export const transactionKeys = {
@@ -12,6 +13,8 @@ export const transactionKeys = {
   list: (filters: TransactionFilters) =>
     ["transactions", "list", filters] as const,
   detail: (id: string) => ["transactions", "detail", id] as const,
+  analytics: (filters: { month?: string }) =>
+    ["transactions", "analytics", filters] as const,
 };
 
 function useApiOptions() {
@@ -101,5 +104,19 @@ export function useDeleteTransaction() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: transactionKeys.all });
     },
+  });
+}
+
+export function useAnalytics(filters: { month?: string } = {}) {
+  const opts = useApiOptions();
+  const params = new URLSearchParams();
+  if (filters.month) params.set("month", filters.month);
+  const qs = params.toString();
+  const queryStr = qs ? `?${qs}` : "";
+
+  return useQuery<AnalyticsResponse, ApiError>({
+    queryKey: transactionKeys.analytics(filters),
+    queryFn: () =>
+      apiFetch<AnalyticsResponse>(`/transactions/analytics${queryStr}`, opts),
   });
 }
