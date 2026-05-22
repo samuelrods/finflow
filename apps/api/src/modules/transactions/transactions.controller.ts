@@ -27,6 +27,7 @@ import {
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { QueryTransactionDto } from './dto/query-transaction.dto';
+import { QueryAnalyticsDto } from './dto/query-analytics.dto';
 
 @ApiTags('Transactions')
 @ApiBearerAuth()
@@ -34,6 +35,17 @@ import { QueryTransactionDto } from './dto/query-transaction.dto';
 @UseGuards(JwtAuthGuard)
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
+
+  @Get('analytics')
+  @ApiOperation({ summary: 'Get transaction analytics for the current user' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Return analytics' })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized' })
+  getAnalytics(
+    @CurrentUser() user: JwtPayload,
+    @Query() query: QueryAnalyticsDto,
+  ) {
+    return this.transactionsService.getAnalytics(user.sub, query);
+  }
 
   @Get()
   @ApiOperation({ summary: 'Get all transactions for the current user' })

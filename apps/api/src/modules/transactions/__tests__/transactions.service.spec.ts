@@ -549,4 +549,45 @@ describe('TransactionsService', () => {
       expect(mockTransactionsRepository.delete).not.toHaveBeenCalled();
     });
   });
+
+  // ─── getAnalytics ─────────────────────────────────────────────────────────
+  describe('getAnalytics', () => {
+    it('returns aggregated analytics for the given user', async () => {
+      mockTransactionsRepository.findAllForUser.mockResolvedValue([
+        {
+          ...mockTransaction,
+          amount: 150.0,
+          date: new Date('2026-05-10T00:00:00.000Z'),
+          type: TransactionType.EXPENSE,
+        },
+        {
+          ...mockTransaction,
+          amount: 500.0,
+          date: new Date('2026-05-15T00:00:00.000Z'),
+          type: TransactionType.INCOME,
+        },
+      ]);
+
+      const result = await service.getAnalytics(USER_ID, { month: '2026-05' });
+
+      expect(result).toBeDefined();
+      expect(result.trends).toHaveLength(31);
+      expect(result.categories).toHaveLength(1);
+      expect(result.categories[0]).toEqual({
+        categoryId: CATEGORY_ID,
+        categoryName: 'Food & Dining',
+        categoryIcon: '🍽️',
+        total: 150.0,
+        percentage: 100.0,
+      });
+      expect(result.insights.savingsRate.current).toBe(70.0);
+      expect(result.insights.topCategory).toEqual({
+        name: 'Food & Dining',
+        total: 150.0,
+        percentage: 100.0,
+      });
+      expect(result.insights.largeTransactions).toHaveLength(1);
+      expect(result.insights.largeTransactions[0].amount).toBe(150.0);
+    });
+  });
 });
