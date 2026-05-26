@@ -14,6 +14,7 @@ async function main() {
   // Optional: drop all data before seeding (if the user wants it inside the seed script itself)
   // But running `prisma migrate reset` is generally preferred. We'll do a programmatic wipe just in case.
   console.log('Dropping existing data...');
+  await prisma.budget.deleteMany();
   await prisma.transaction.deleteMany();
   await prisma.category.deleteMany();
   await prisma.user.deleteMany();
@@ -234,6 +235,72 @@ async function main() {
 
   console.log(`Created ${adminTransactions.length} transactions for Admin`);
   console.log(`Created ${normalTransactions.length} transactions for User`);
+
+  // Create budgets for Admin for the current month
+  console.log('Seeding budgets...');
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
+  await prisma.budget.createMany({
+    data: [
+      {
+        amount: 500.0,
+        month: currentMonth,
+        year: currentYear,
+        userId: adminUser.id,
+        categoryId: adminCategories['Food'],
+      },
+      {
+        amount: 250.0,
+        month: currentMonth,
+        year: currentYear,
+        userId: adminUser.id,
+        categoryId: adminCategories['Transport'],
+      },
+      {
+        amount: 1600.0,
+        month: currentMonth,
+        year: currentYear,
+        userId: adminUser.id,
+        categoryId: adminCategories['Housing'],
+      },
+      {
+        amount: 150.0,
+        month: currentMonth,
+        year: currentYear,
+        userId: adminUser.id,
+        categoryId: adminCategories['Utilities'],
+      },
+    ],
+  });
+
+  // Create budgets for Normal User for the current month
+  await prisma.budget.createMany({
+    data: [
+      {
+        amount: 400.0,
+        month: currentMonth,
+        year: currentYear,
+        userId: normalUser.id,
+        categoryId: normalCategories['Groceries'],
+      },
+      {
+        amount: 100.0,
+        month: currentMonth,
+        year: currentYear,
+        userId: normalUser.id,
+        categoryId: normalCategories['Transit'],
+      },
+      {
+        amount: 1200.0,
+        month: currentMonth,
+        year: currentYear,
+        userId: normalUser.id,
+        categoryId: normalCategories['Rent'],
+      },
+    ],
+  });
+
   console.log('Seeding finished.');
 }
 

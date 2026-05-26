@@ -3,6 +3,7 @@ import { NotFoundException } from '@nestjs/common';
 import { TransactionsService } from '../transactions.service';
 import { TransactionsRepository } from '../transactions.repository';
 import { CategoriesService } from '../../categories/categories.service';
+import { BudgetsService } from '../../budgets/budgets.service';
 import { TransactionType } from '../enums/transaction-type.enum';
 import { CreateTransactionDto } from '../dto/create-transaction.dto';
 import { UpdateTransactionDto } from '../dto/update-transaction.dto';
@@ -64,6 +65,12 @@ describe('TransactionsService', () => {
           provide: CategoriesService,
           useValue: {
             getAll: jest.fn().mockResolvedValue([mockCategory]),
+          },
+        },
+        {
+          provide: BudgetsService,
+          useValue: {
+            getBudgetsForMonths: jest.fn().mockResolvedValue([]),
           },
         },
       ],

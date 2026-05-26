@@ -19,14 +19,17 @@ import {
   Flame,
   AlertCircle,
   ShoppingBag,
+  PiggyBank,
 } from "lucide-react";
 import { useAnalytics } from "@/hooks/use-transactions";
+import { useBudgets } from "@/hooks/use-budgets";
+import { cn } from "@/lib/utils";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, Pie, PieChart, Cell } from "recharts";
+import { Area, AreaChart, Bar, ComposedChart, Line, CartesianGrid, XAxis, Pie, PieChart, Cell } from "recharts";
 
 // ─── Sub-Components ─────────────────────────────────────────────────────────
 
@@ -74,6 +77,59 @@ function SavingsRateCard({ rate, change, status }: { rate: number; change: numbe
             {change >= 0 ? "▲" : "▼"} {Math.abs(change)}%
           </span> since last month
         </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function BudgetAdherenceCard({
+  adherence,
+  isLoading,
+}: {
+  adherence: { rate: number; keptCount: number; totalCount: number } | null;
+  isLoading: boolean;
+}) {
+  return (
+    <Card className="bg-card/40 backdrop-blur-md border border-border/50 shadow-lg transition-all duration-300 hover:shadow-primary/5 hover:border-primary/30">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+          Budget Adherence <PiggyBank className="h-4 w-4 text-primary" />
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {isLoading ? (
+          <Skeleton className="h-8 w-28" />
+        ) : adherence ? (
+          <>
+            <div className="flex items-baseline space-x-2">
+              <span
+                className={cn(
+                  "text-4xl font-extrabold tracking-tight",
+                  adherence.rate >= 90
+                    ? "text-emerald-500"
+                    : adherence.rate >= 70
+                      ? "text-amber-500"
+                      : "text-rose-500"
+                )}
+              >
+                {adherence.rate}%
+              </span>
+              <span className="text-xs text-muted-foreground font-semibold bg-muted px-2 py-0.5">
+                {adherence.keptCount} of {adherence.totalCount} Kept
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {adherence.rate === 100
+                ? "Perfect budget execution this month!"
+                : `${adherence.totalCount - adherence.keptCount} budgets exceeded.`}
+            </p>
+          </>
+        ) : (
+          <div className="space-y-1">
+            <div className="text-lg font-bold text-muted-foreground py-1">No Budgets</div>
+            <p className="text-xs text-muted-foreground">Set limits on Budgets page</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -309,10 +365,11 @@ function CategoryDonutChart({ data }: { data: { categoryId: string; categoryName
   );
 }
 
-function MonthlyBarChart({ history }: { history: { month: string; income: number; expense: number; savingsRate: number }[] }) {
+function MonthlyBarChart({ history }: { history: { month: string; income: number; expense: number; budget?: number; savingsRate: number }[] }) {
   const config = {
     income: { label: "Income", color: "#10b981" },
     expense: { label: "Expenses", color: "#f43f5e" },
+    budget: { label: "Budget Limit", color: "#6366f1" },
   };
 
   const chartData = useMemo(() => {
@@ -326,17 +383,18 @@ function MonthlyBarChart({ history }: { history: { month: string; income: number
     <Card className="col-span-1 lg:col-span-7 bg-card/40 backdrop-blur-md border border-border/50 shadow-lg">
       <CardHeader>
         <CardTitle className="text-lg font-bold">Monthly Comparison</CardTitle>
-        <CardDescription>Income vs Expenses over the last 6 months</CardDescription>
+        <CardDescription>Income vs Expenses vs Budget Limit over the last 6 months</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={config} className="h-[260px] w-full">
-          <BarChart data={chartData} margin={{ left: 0, right: 0, top: 10, bottom: 0 }}>
+          <ComposedChart data={chartData} margin={{ left: 0, right: 0, top: 10, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="label" tickLine={false} axisLine={false} />
             <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar dataKey="income" fill="#10b981" radius={[0, 0, 0, 0]} maxBarSize={30} />
-            <Bar dataKey="expense" fill="#f43f5e" radius={[0, 0, 0, 0]} maxBarSize={30} />
-          </BarChart>
+            <Bar dataKey="income" fill="#10b981" radius={[0, 0, 0, 0]} maxBarSize={25} />
+            <Bar dataKey="expense" fill="#f43f5e" radius={[0, 0, 0, 0]} maxBarSize={25} />
+            <Line type="monotone" dataKey="budget" stroke="#6366f1" strokeWidth={2.5} dot={{ r: 4, strokeWidth: 1 }} activeDot={{ r: 6 }} />
+          </ComposedChart>
         </ChartContainer>
       </CardContent>
     </Card>
@@ -351,6 +409,21 @@ export default function AnalyticsPage() {
   const [monthStr, setMonthStr] = useState(initialMonthStr);
 
   const { data: analyticsData, isLoading, error } = useAnalytics({ month: monthStr });
+
+  const [year, month] = useMemo(() => {
+    const [y, m] = monthStr.split("-").map(Number);
+    return [y, m];
+  }, [monthStr]);
+
+  const { data: budgetsData = [], isLoading: isLoadingBudgets } = useBudgets({ month, year });
+
+  const budgetAdherence = useMemo(() => {
+    if (budgetsData.length === 0) return null;
+    const keptCount = budgetsData.filter((b) => b.spent <= Number(b.amount)).length;
+    const totalCount = budgetsData.length;
+    const rate = Math.round((keptCount / totalCount) * 100);
+    return { rate, keptCount, totalCount };
+  }, [budgetsData]);
 
   if (error) {
     return (
@@ -381,8 +454,8 @@ export default function AnalyticsPage() {
       </div>
 
       {isLoading || !analyticsData ? (
-        <div className="grid gap-6 md:grid-cols-3">
-          {[1, 2, 3].map((n) => (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((n) => (
             <Skeleton key={n} className="h-32 w-full" />
           ))}
           <Skeleton className="col-span-1 lg:col-span-4 h-80 w-full" />
@@ -392,12 +465,13 @@ export default function AnalyticsPage() {
       ) : (
         <div className="space-y-6">
           {/* Insights Grid */}
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <SavingsRateCard
               rate={analyticsData.insights.savingsRate.current}
               change={analyticsData.insights.savingsRate.change}
               status={analyticsData.insights.savingsRate.status}
             />
+            <BudgetAdherenceCard adherence={budgetAdherence} isLoading={isLoadingBudgets} />
             <TopCategoryCard data={analyticsData.insights.topCategory} />
             <SpendingVelocityCard data={analyticsData.insights.spendingVelocity} />
           </div>
@@ -406,8 +480,15 @@ export default function AnalyticsPage() {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
             <IncomeExpenseAreaChart trends={analyticsData.trends} />
             <CategoryDonutChart data={analyticsData.categories} />
-            <MonthlyBarChart history={analyticsData.history} />
-            <LargeExpensesCard data={analyticsData.insights.largeTransactions} />
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-10">
+            <div className="lg:col-span-7">
+              <MonthlyBarChart history={analyticsData.history} />
+            </div>
+            <div className="lg:col-span-3">
+              <LargeExpensesCard data={analyticsData.insights.largeTransactions} />
+            </div>
           </div>
         </div>
       )}

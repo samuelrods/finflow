@@ -22,9 +22,12 @@ import {
   ArrowDownCircle,
   Wallet,
   Plus,
+  PiggyBank,
+  AlertTriangle,
 } from "lucide-react";
 import { useTransactions } from "@/hooks/use-transactions";
 import { useCategories } from "@/hooks/use-categories";
+import { useBudgets } from "@/hooks/use-budgets";
 import {
   ChartContainer,
   ChartTooltip,
@@ -48,6 +51,19 @@ export default function DashboardPage() {
     useTransactions({ month: monthStr });
   const { data: categoriesData, isLoading: isLoadingCategories } =
     useCategories();
+
+  const [year, month] = useMemo(() => {
+    const [y, m] = monthStr.split("-").map(Number);
+    return [y, m];
+  }, [monthStr]);
+
+  const { data: budgetsData = [], isLoading: isLoadingBudgets } =
+    useBudgets({ month, year });
+
+  const totalBudgeted = budgetsData.reduce((sum, b) => sum + Number(b.amount), 0);
+  const totalSpentInBudgetedCategories = budgetsData.reduce((sum, b) => sum + b.spent, 0);
+  const remainingBudget = totalBudgeted - totalSpentInBudgetedCategories;
+  const budgetProgress = totalBudgeted > 0 ? (totalSpentInBudgetedCategories / totalBudgeted) * 100 : 0;
 
   const incomeTotal = transactionsData?.incomeTotal ?? 0;
   const expenseTotal = transactionsData?.expenseTotal ?? 0;
@@ -126,7 +142,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Income</CardTitle>
@@ -175,6 +191,42 @@ export default function DashboardPage() {
                 )}
               >
                 ${netBalance.toFixed(2)}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Budget Status</CardTitle>
+            <PiggyBank className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {isLoadingBudgets ? (
+              <Skeleton className="h-8 w-28" />
+            ) : totalBudgeted > 0 ? (
+              <div className="space-y-1">
+                <div
+                  className={cn(
+                    "text-2xl font-bold",
+                    budgetProgress > 100
+                      ? "text-destructive"
+                      : budgetProgress >= 80
+                        ? "text-amber-500"
+                        : "text-emerald-500"
+                  )}
+                >
+                  {budgetProgress.toFixed(0)}% Used
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {remainingBudget >= 0
+                    ? `$${remainingBudget.toFixed(2)} remaining`
+                    : `$${Math.abs(remainingBudget).toFixed(2)} over limit`}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <div className="text-2xl font-bold text-muted-foreground">No Budget</div>
+                <p className="text-xs text-muted-foreground">Set limits in Budgets</p>
               </div>
             )}
           </CardContent>
@@ -234,33 +286,82 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-3">
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Manage your transactions</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button
-              className="w-full justify-start"
-              onClick={() => setIsAddTransactionOpen(true)}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Quick Add Transaction
-            </Button>
-            <Button asChild className="w-full justify-start" variant="outline">
-              <Link href="/dashboard/transactions">
-                <ArrowRight className="mr-2 h-4 w-4" />
-                View All Transactions
-              </Link>
-            </Button>
-            <Button asChild className="w-full justify-start" variant="outline">
-              <Link href="/dashboard/categories">
-                <ArrowRight className="mr-2 h-4 w-4" />
-                Manage Categories
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="col-span-3 space-y-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle>Quick Actions</CardTitle>
+              <CardDescription>Manage your transactions</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button
+                className="w-full justify-start"
+                onClick={() => setIsAddTransactionOpen(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Quick Add Transaction
+              </Button>
+              <Button asChild className="w-full justify-start" variant="outline">
+                <Link href="/dashboard/transactions">
+                  <ArrowRight className="mr-2 h-4 w-4" />
+                  View All Transactions
+                </Link>
+              </Button>
+              <Button asChild className="w-full justify-start" variant="outline">
+                <Link href="/dashboard/categories">
+                  <ArrowRight className="mr-2 h-4 w-4" />
+                  Manage Categories
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          {budgetsData.length > 0 && budgetsData.some((b) => b.spent >= Number(b.amount) * 0.8) && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-1.5 text-amber-500">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  Budget Alerts
+                </CardTitle>
+                <CardDescription className="text-xxs">
+                  Categories over or near their monthly limit
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 max-h-[220px] overflow-y-auto pr-1">
+                {budgetsData
+                  .filter((b) => b.spent >= Number(b.amount) * 0.8)
+                  .map((budget) => {
+                    const limit = Number(budget.amount);
+                    const percent = limit > 0 ? (budget.spent / limit) * 100 : 0;
+                    const isOver = budget.spent > limit;
+
+                    return (
+                      <div key={budget.id} className="space-y-1.5">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-semibold truncate max-w-32">{budget.category.name}</span>
+                          <span className={cn("font-bold text-xxs", isOver ? "text-destructive" : "text-amber-500")}>
+                            {percent.toFixed(0)}%
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full bg-muted overflow-hidden border">
+                          <div
+                            className={cn(
+                              "h-full transition-all duration-300",
+                              isOver ? "bg-destructive" : "bg-amber-500"
+                            )}
+                            style={{ width: `${Math.min(percent, 100)}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between items-center text-xxs text-muted-foreground">
+                          <span>Spent: ${budget.spent.toFixed(2)}</span>
+                          <span>Limit: ${limit.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
 
       <Card>

@@ -11,6 +11,7 @@ import {
   ArrowLeftRight,
   Tags,
   LogOut,
+  PiggyBank,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -24,6 +25,7 @@ const navigation = [
     icon: ArrowLeftRight,
   },
   { name: "Categories", href: "/dashboard/categories", icon: Tags },
+  { name: "Budgets", href: "/dashboard/budgets", icon: PiggyBank },
 ];
 
 export function DashboardSidebar({ className }: { className?: string }) {

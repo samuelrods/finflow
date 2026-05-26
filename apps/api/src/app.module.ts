@@ -9,6 +9,7 @@ import { UsersModule } from './modules/users/users.module';
 import { APP_PIPE } from '@nestjs/core';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
+import { BudgetsModule } from './modules/budgets/budgets.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { TransactionsModule } from './modules/transactions/transactions.module';
     UsersModule,
     CategoriesModule,
     TransactionsModule,
+    BudgetsModule,
   ],
   controllers: [AppController],
   providers: [
