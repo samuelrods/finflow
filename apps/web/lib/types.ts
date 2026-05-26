@@ -88,3 +88,15 @@ export interface AnalyticsResponse {
   history: AnalyticsHistory[];
   insights: AnalyticsInsights;
 }
+
+export interface Budget {
+  id: string;
+  amount: string; // Decimal serialized as string, e.g. "500.00"
+  month: number;
+  year: number;
+  categoryId: string;
+  category: Category;
+  spent: number;
+  createdAt: string;
+  updatedAt: string;
+}
