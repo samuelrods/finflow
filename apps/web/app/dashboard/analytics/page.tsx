@@ -29,7 +29,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { Area, AreaChart, Bar, BarChart, ComposedChart, Line, CartesianGrid, XAxis, Pie, PieChart, Cell } from "recharts";
+import { Area, AreaChart, Bar, ComposedChart, Line, CartesianGrid, XAxis, Pie, PieChart, Cell } from "recharts";
 
 // ─── Sub-Components ─────────────────────────────────────────────────────────
 

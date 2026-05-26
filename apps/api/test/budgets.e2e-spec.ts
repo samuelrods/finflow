@@ -88,11 +88,17 @@ describe('BudgetsController (e2e)', () => {
       })
       .expect(201);
 
-    expect(response.body).toHaveProperty('amount');
-    expect(Number(response.body.amount)).toBe(350.00);
-    expect(response.body).toHaveProperty('month', 5);
-    expect(response.body).toHaveProperty('year', 2026);
-    expect(response.body).toHaveProperty('categoryId', categoryId);
+    const body = response.body as {
+      amount: string;
+      month: number;
+      year: number;
+      categoryId: string;
+    };
+    expect(body).toHaveProperty('amount');
+    expect(Number(body.amount)).toBe(350.0);
+    expect(body).toHaveProperty('month', 5);
+    expect(body).toHaveProperty('year', 2026);
+    expect(body).toHaveProperty('categoryId', categoryId);
   });
 
   it('/budgets (POST) - duplicate budgets should throw 409 Conflict', async () => {
@@ -159,9 +165,9 @@ describe('BudgetsController (e2e)', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
 
-    const body: any = response.body;
+    const body = response.body as { amount: string; spent: number }[];
     expect(body.length).toBe(1);
-    expect(Number(body[0].amount)).toBe(500.00);
+    expect(Number(body[0].amount)).toBe(500.0);
     expect(body[0].spent).toBe(150.0);
   });
 
@@ -182,7 +188,8 @@ describe('BudgetsController (e2e)', () => {
       .send({ amount: 650.0 })
       .expect(200);
 
-    expect(Number(response.body.amount)).toBe(650.0);
+    const body = response.body as { amount: string };
+    expect(Number(body.amount)).toBe(650.0);
   });
 
   it('/budgets/:id (DELETE) - delete budget limit', async () => {
