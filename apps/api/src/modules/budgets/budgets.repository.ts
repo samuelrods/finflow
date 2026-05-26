@@ -71,6 +71,19 @@ export class BudgetsRepository {
     return count > 0;
   }
 
+  findBudgetsForMonths(
+    userId: string,
+    months: { month: number; year: number }[],
+  ): Promise<BudgetWithCategory[]> {
+    return this.prisma.budget.findMany({
+      where: {
+        userId,
+        OR: months,
+      },
+      include: { category: true },
+    });
+  }
+
   /**
    * Get total spent (EXPENSE transactions) for all categories for a given user, month, and year.
    * Returns a Map where key is categoryId and value is total spent.

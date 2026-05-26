@@ -36,6 +36,13 @@ export class BudgetsService {
     }));
   }
 
+  async getBudgetsForMonths(
+    userId: string,
+    months: { month: number; year: number }[],
+  ): Promise<BudgetWithCategory[]> {
+    return this.budgetsRepository.findBudgetsForMonths(userId, months);
+  }
+
   async create(userId: string, dto: CreateBudgetDto): Promise<Budget> {
     const isValidCategory = await this.budgetsRepository.validateCategory(
       dto.categoryId,

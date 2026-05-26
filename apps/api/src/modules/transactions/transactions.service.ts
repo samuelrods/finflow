@@ -11,8 +11,9 @@ import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { QueryTransactionDto } from './dto/query-transaction.dto';
 import { QueryAnalyticsDto } from './dto/query-analytics.dto';
-import { Prisma } from '../../generated/prisma/browser';
+import { Prisma, Budget } from '../../generated/prisma/browser';
 import { CategoriesService } from '../categories/categories.service';
+import { BudgetsService } from '../budgets/budgets.service';
 
 export interface TransactionListResult {
   data: TransactionWithCategory[];
@@ -28,6 +29,7 @@ export class TransactionsService {
   constructor(
     private readonly transactionsRepository: TransactionsRepository,
     private readonly categoriesService: CategoriesService,
+    private readonly budgetsService: BudgetsService,
   ) {}
 
   async getAll(
@@ -161,10 +163,25 @@ export class TransactionsService {
       (t) => t.date >= targetStart && t.date < targetEnd,
     );
     const prevTx = txs.filter((t) => t.date >= prevStart && t.date < prevEnd);
+
+    const orConditions: { month: number; year: number }[] = [];
+    const temp = new Date(historyStart);
+    while (temp < targetEnd) {
+      orConditions.push({
+        month: temp.getUTCMonth() + 1,
+        year: temp.getUTCFullYear(),
+      });
+      temp.setUTCMonth(temp.getUTCMonth() + 1);
+    }
+    const budgets = await this.budgetsService.getBudgetsForMonths(
+      userId,
+      orConditions,
+    );
+
     return {
       trends: this.calculateDailyTrends(targetStart, targetEnd, targetTx),
       categories: this.calculateCategoryBreakdown(targetTx),
-      history: this.calculateMonthlyHistory(historyStart, targetEnd, txs),
+      history: this.calculateMonthlyHistory(historyStart, targetEnd, txs, budgets),
       insights: this.calculateInsights(targetTx, prevTx, monthStr),
     };
   }
@@ -239,11 +256,11 @@ export class TransactionsService {
   }
 
   private initializeMonthsMap(start: Date, end: Date) {
-    const monthsMap = new Map<string, { income: number; expense: number }>();
+    const monthsMap = new Map<string, { income: number; expense: number; budget: number }>();
     const curr = new Date(start);
     while (curr < end) {
       const key = `${curr.getUTCFullYear()}-${String(curr.getUTCMonth() + 1).padStart(2, '0')}`;
-      monthsMap.set(key, { income: 0, expense: 0 });
+      monthsMap.set(key, { income: 0, expense: 0, budget: 0 });
       curr.setUTCMonth(curr.getUTCMonth() + 1);
     }
     return monthsMap;
@@ -253,6 +270,7 @@ export class TransactionsService {
     start: Date,
     end: Date,
     txs: TransactionWithCategory[],
+    budgets: Budget[],
   ) {
     const monthsMap = this.initializeMonthsMap(start, end);
     for (const tx of txs) {
@@ -269,10 +287,18 @@ export class TransactionsService {
         val.expense += amt;
       }
     }
+    for (const budget of budgets) {
+      const key = `${budget.year}-${String(budget.month).padStart(2, '0')}`;
+      const val = monthsMap.get(key);
+      if (val) {
+        val.budget += Number(budget.amount);
+      }
+    }
     return Array.from(monthsMap.entries()).map(([month, vals]) => ({
       month,
       income: Number(vals.income.toFixed(2)),
       expense: Number(vals.expense.toFixed(2)),
+      budget: Number(vals.budget.toFixed(2)),
       savingsRate:
         vals.income > 0
           ? Number(
