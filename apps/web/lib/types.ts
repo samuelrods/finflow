@@ -53,6 +53,7 @@ export interface AnalyticsHistory {
   month: string;
   income: number;
   expense: number;
+  budget?: number;
   savingsRate: number;
 }
 
